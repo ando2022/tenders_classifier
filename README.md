@@ -1,60 +1,47 @@
-# Constructor Tech – Agentic Content Generation with Claude Code SDK
+# BAK Economics – AI-Powered Sales Opportunity Identification
 
-**Authors**: Karlo & Debbie  
-**Mentors**: Albin & Ekaterina  
+**Authors**: Ana, Damla, Cedric, Tim  
+**Mentors**: Stefanie & Ekaterina  
 **Program**: Constructor Academy – Data Science & AI Bootcamp  
-**Partner**: Constructor Tech
+**Partner**: BAK Economics
 
 ---
 
 ## Project Overview
-This repository contains our capstone project implementing **agentic content generation** with the **Claude Code SDK**.  
-We aim to build a **multi-agent system** that creates a complete **course outline with content** in one run, using:
-- **Task planning**
-- **Subagents**
-- **Course structure representation in the file system**
-
-The work is guided by **Albin** and **Ekaterina** and is aligned with Constructor Tech’s all-in-one platform for **research, education, and sports** (ERP, LMS, predictive game analytics, self-driving racing cars, sponsorship retention, safety & compliance).
+This repository contains our capstone project to build an **AI-driven system** for **BAK Economics**. The goal is to automate the identification and qualification of sales opportunities from various documents. This project addresses key challenges faced by the **Analytics and Sales teams**, such as manually sifting through long lists of potential leads. By leveraging capabilities like **PDF OCR, Keyword Extraction, and Predictive Modeling**, we aim to boost **Operational Efficiency** and drive **Revenue** by increasing the number of high-quality **Sales Qualified Opportunities**.
 
 ---
 
 ## Goal
-Implement an agentic system (Claude Code SDK) that generates a **full course outline including content** in one go.
-
-**Required features**
-- Agentic task planning
-- Subagents (generator/reviewer roles)
-- Persistent course structure mirrored in the file system
+To implement an intelligent system that automatically scans documents (e.g., PDFs), identifies relevant sales opportunities based on **company fit and offering**, and predicts their potential for success to streamline the sales pipeline.
 
 ---
 
 ## Milestones
-1. **Claude Code SDK familiarization**
-   - Basic workflow
-   - Extension/config points: **tools, rules, subagents**
-   - Running from the SDK
-2. **Basic multi-agent system**
-   - Creates initial course outline
-3. **Content generator agent(s)**
-   - Populate modules/lessons with learning content
-4. **Review/critique agent(s)**
-   - Quality checks, alignment with specs, iterative refinement
+1.  **Data Ingestion & Processing**
+    * Develop a pipeline for processing PDFs using OCR.
+    * Extract full-text content from the body, not just titles or tags.
+    * Incorporate a wider range of data sources.
+2.  **Opportunity Identification Engine**
+    * Implement keyword extraction using a defined dictionary.
+    * Build the core logic for identifying qualified opportunities.
+3.  **Predictive Modeling & Learning**
+    * Create a model to predict the probability of winning an opportunity.
+    * Implement a reinforcement learning loop to refine the model based on sales outcomes (won/lost).
+4.  **System Evaluation**
+    * Measure the system's impact on the primary KPI: the number of **Sales Qualified Opportunities**.
 
 ---
 
 ## Data & Inputs
-- **Course storage format specification**
-- **Input specification** (e.g., target audience, prerequisites, outcomes)
-- **Instructional expert knowledge**
-  - Instructions, task descriptions
-  - Review/QA criteria as prompt snippets
-- **Input learning material** (source docs the agents will use)
+* **Source Documents:** PDFs and other files containing potential leads.
+* **Sales Qualification Criteria:** Expert knowledge defining company fit and offering relevance.
+* **Keyword Dictionary:** A curated list of terms relevant to BAK Economics' business.
+* **Historical Sales Data:** Past opportunity outcomes (won/lost) for model training.
 
 ---
 
 ## Tech Stack
-- **Claude Code SDK**
-- **Python** (SDK integration & orchestration)
-- **Git / GitLab** for version control
-
----
+* **Python:** For building the data processing pipeline and machine learning models (OCR, keyword extraction, prediction).
+* **Machine Learning Libraries:** For implementing the opportunity identification and prediction logic.
+* **Git / GitLab:** For version control and collaborative development.
