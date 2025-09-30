@@ -17,8 +17,16 @@ class Config:
     
     # SIMAP API Configuration
     SIMAP_API_BASE_URL = "https://int.simap.ch/api"
-    SIMAP_API_KEY = os.getenv('SIMAP_API_KEY')
     SIMAP_API_VERSION = "1.3.0"
+    
+    # OAuth 2.0 Configuration
+    SIMAP_CLIENT_ID = os.getenv('SIMAP_CLIENT_ID')
+    SIMAP_REDIRECT_URI = os.getenv('SIMAP_REDIRECT_URI', 'http://localhost:8080/callback')
+    SIMAP_SCOPE = os.getenv('SIMAP_SCOPE', 'openid profile')
+    
+    # Token storage
+    SIMAP_ACCESS_TOKEN = os.getenv('SIMAP_ACCESS_TOKEN')
+    SIMAP_REFRESH_TOKEN = os.getenv('SIMAP_REFRESH_TOKEN')
     
     # API Request Settings
     DEFAULT_REQUEST_TIMEOUT = 30  # seconds
@@ -53,22 +61,47 @@ class Config:
             'SIMAP_API_BASE_URL',
         ]
         
+        optional_settings = [
+            'SIMAP_CLIENT_ID',
+            'SIMAP_ACCESS_TOKEN'
+        ]
+        
         for setting in required_settings:
             if not getattr(cls, setting):
                 print(f"Warning: {setting} is not configured")
                 return False
         
+        # Check optional settings
+        missing_optional = []
+        for setting in optional_settings:
+            if not getattr(cls, setting):
+                missing_optional.append(setting)
+        
+        if missing_optional:
+            print(f"Info: Optional settings not configured: {', '.join(missing_optional)}")
+            print("These are required for OAuth authentication.")
+        
         return True
     
     @classmethod
-    def get_api_key(cls) -> Optional[str]:
+    def get_client_id(cls) -> Optional[str]:
         """
-        Get the SIMAP API key from environment variables
+        Get the SIMAP client ID from environment variables
         
         Returns:
-            str or None: API key if available
+            str or None: Client ID if available
         """
-        return cls.SIMAP_API_KEY
+        return cls.SIMAP_CLIENT_ID
+    
+    @classmethod
+    def get_access_token(cls) -> Optional[str]:
+        """
+        Get the SIMAP access token from environment variables
+        
+        Returns:
+            str or None: Access token if available
+        """
+        return cls.SIMAP_ACCESS_TOKEN
     
     @classmethod
     def setup_directories(cls):
