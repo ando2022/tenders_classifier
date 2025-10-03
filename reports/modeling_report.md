@@ -11,6 +11,7 @@ Date: 2025-10-03
   - Stage 2 `kw_hit_selected_by_sales` within selected: 2 positives, 6 negatives
 
 ### Approach
+- Text used: full tender content (Excel column `Order Description` → standardized as `Topic`).
 - Two-stage funnel modeling:
   - M1: Predict `kw_hit_selected` for all items.
   - M2: Predict `kw_hit_selected_by_sales` among items with M1=1.
@@ -44,18 +45,46 @@ Notes:
 - Use `p_final = p_select × 0.25` to prioritize for sales until we can train M2.
 
 ### Next Steps (Data & Modeling)
-1. Collect labels
-   - Grow Stage 1 positives; aim ≥50 positives in total.
-   - Critically, collect Stage 2 labels; aim ≥20–30 sales-accepted positives to train M2.
-2. Enrich text
-   - If available, switch from titles to full tender content (requirements/description).
-3. Features (optional when data available)
-   - CPV labels (top-k one-hot), simple budget extraction (log value), buyer type, country, year/week.
-4. Modeling
-   - Calibrate probabilities (isotonic/Platt) once label counts increase.
-   - Re-evaluate TF‑IDF char vs embeddings vs blended on expanded data.
-5. Deployment
-   - Generate and ship a ranked CSV (Topic, p_select, p_final) on each new batch.
+Below each step is the rationale for why it is critical now.
+
+1. Collect labels (highest priority)
+   - What: Increase positives for Stage 1; especially gather Stage 2 (sales-accepted) outcomes.
+   - Why: Current Stage 2 has only 2 positives → cannot train; without more labels we can’t optimize downstream selection thresholds or learn sales preferences.
+   - Target: ≥50 positives total for Stage 1; ≥20–30 positives for Stage 2.
+
+2. Keep using full content; improve robustness
+   - What: Continue training on full tender content; maintain char n‑gram TF‑IDF as default.
+   - Why: Char n‑grams are language-robust; they reached perfect OOF on current data and scale with more labels.
+
+3. Add lightweight structured signals (when available)
+   - What: CPV label (top‑k one‑hot), presence of budget, log(budget), buyer type, country, year/week.
+   - Why: These orthogonal signals help generalize beyond lexical matches and reduce brittleness.
+
+4. Probability calibration (after more data)
+   - What: Apply Platt or isotonic calibration on a validation fold.
+   - Why: Turn raw scores into trustworthy probabilities to set business thresholds (auto‑select, sales handoff).
+
+5. Model comparison and selection (ongoing)
+   - What: Re‑evaluate TF‑IDF char, embeddings, and blended models as labels grow.
+   - Why: Embeddings often surpass TF‑IDF once data and text length increase; pick by OOF PR‑AUC/lift.
+
+6. Deployment and feedback
+   - What: Produce ranked CSV for each batch; capture reviewer/sales outcomes back into the dataset.
+   - Why: Creates the continuous labeling loop needed to improve Stage 2 and calibrate operating points.
+
+### Data Collection Template (to enable richer features)
+
+| Field | Example | Extraction method | Required? | Notes |
+|---|---|---|---|---|
+| Full text (content) | Full description | Already present (`Order Description`) | Yes | Primary signal for models |
+| CPV code/label | 73200000-4 Research services | Regex + CPV lookup | Nice‑to‑have | Top‑k one‑hot |
+| Budget value | 300'000 CHF | Regex currency + number | Nice‑to‑have | Also store currency; add log(budget) |
+| Buyer/authority | Federal Office X | From sheet or text | Nice‑to‑have | Map to buyer_type buckets |
+| Country | Switzerland | From buyer/text | Nice‑to‑have | Normalize names/ISO |
+| Publication date | 2024‑09‑15 | From sheet | Nice‑to‑have | Derive year/week |
+| Selection label | kw_hit_selected ∈ {0,1} | Business label | Yes | Stage 1 target |
+| Sales label | kw_hit_selected_by_sales ∈ {0,1} | Business label | Critical | Stage 2 target |
+
 
 ### Risks
 - Extremely imbalanced and tiny positive set; OOF metrics may be optimistic. Prioritize collecting more positives, especially for Stage 2.
