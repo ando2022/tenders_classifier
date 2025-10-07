@@ -1,71 +1,84 @@
 """
 Step 5: Evaluation
-Compute metrics and save report.
+Compute PR-AUC, precision@K, recall@K, and save PR curves.
 """
 
+import json
+import os
+import numpy as np
 import pandas as pd
 from pathlib import Path
-from sklearn.metrics import (
-    classification_report, 
-    confusion_matrix, 
-    roc_auc_score, 
-    average_precision_score
-)
+from sklearn.metrics import average_precision_score, precision_recall_curve
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
+import matplotlib.pyplot as plt
+
+def load_preds(path: Path) -> pd.DataFrame:
+    """Load predictions from JSONL file."""
+    rows = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            rows.append(json.loads(line))
+    df = pd.DataFrame(rows)
+    
+    # Convert predicted label to probability-ish score:
+    # use confidence_score with sign for Yes/No
+    conf = pd.to_numeric(df["confidence_score"], errors="coerce").fillna(0)
+    is_yes = (df["prediction"].astype(str).str.lower() == "yes").astype(int)
+    
+    # Simple score: confidence * 1 if yes else 0
+    score = conf * is_yes
+    df["score"] = score
+    df["y_true"] = df["label"].astype(int)
+    
+    return df
+
+def pr_report(df: pd.DataFrame, name: str, reports_dir: Path):
+    """Generate PR curve and top-K metrics."""
+    ap = average_precision_score(df["y_true"], df["score"])
+    print(f"\n{name.upper()}: PR-AUC (Average Precision) = {ap:.4f}")
+    
+    # PR curve
+    precision, recall, thresh = precision_recall_curve(df["y_true"], df["score"])
+    
+    plt.figure(figsize=(8, 6))
+    plt.plot(recall, precision, linewidth=2)
+    plt.xlabel("Recall", fontsize=12)
+    plt.ylabel("Precision", fontsize=12)
+    plt.title(f"PR Curve - {name.upper()} (AP={ap:.3f})", fontsize=14)
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.savefig(reports_dir / f"pr_curve_{name}.png", dpi=200)
+    plt.close()
+    
+    # Top-K analysis
+    df_sorted = df.sort_values("score", ascending=False).reset_index(drop=True)
+    print(f"\nTop-K Analysis ({name.upper()}):")
+    for K in [50, 100, 170, 200, 300]:
+        if K <= len(df_sorted):
+            topk = df_sorted.head(K)
+            prec_at_k = topk["y_true"].mean()
+            recall_at_k = topk["y_true"].sum() / df_sorted["y_true"].sum() if df_sorted["y_true"].sum() > 0 else 0.0
+            print(f"  K={K:>3}: Precision@K={prec_at_k:.3f} | Recall@K={recall_at_k:.3f}")
 
 def main():
     base = Path(__file__).parent.parent
+    processed_dir = base / "data" / "processed"
     reports_dir = base / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
     
-    # Load predictions
-    preds = pd.read_csv(reports_dir / "predictions.csv")
+    val_path = processed_dir / "preds_val.jsonl"
+    test_path = processed_dir / "preds_test.jsonl"
     
-    y_true = preds["label_true"]
-    y_pred = preds["label_pred"]
-    y_conf = preds["confidence"]
+    if val_path.exists():
+        dfv = load_preds(val_path)
+        pr_report(dfv, "val", reports_dir)
     
-    # Metrics
-    cm = confusion_matrix(y_true, y_pred)
-    report = classification_report(y_true, y_pred, digits=3)
+    if test_path.exists():
+        dft = load_preds(test_path)
+        pr_report(dft, "test", reports_dir)
     
-    # AUC/AP if we have confidence scores
-    try:
-        auc = roc_auc_score(y_true, y_conf)
-        ap = average_precision_score(y_true, y_conf)
-    except:
-        auc = ap = None
-    
-    # Print
-    print("=== EVALUATION RESULTS ===\n")
-    print(f"Total samples: {len(preds)}")
-    print(f"Positive (true): {y_true.sum()}")
-    print(f"Positive (pred): {y_pred.sum()}")
-    
-    print("\nConfusion Matrix:")
-    print(cm)
-    
-    print("\nClassification Report:")
-    print(report)
-    
-    if auc:
-        print(f"\nAUC: {auc:.4f}")
-        print(f"AP (PR-AUC): {ap:.4f}")
-    
-    # Save report
-    report_path = reports_dir / "evaluation_report.txt"
-    with open(report_path, "w") as f:
-        f.write("=== EVALUATION RESULTS ===\n\n")
-        f.write(f"Total samples: {len(preds)}\n")
-        f.write(f"Positive (true): {y_true.sum()}\n")
-        f.write(f"Positive (pred): {y_pred.sum()}\n\n")
-        f.write("Confusion Matrix:\n")
-        f.write(str(cm) + "\n\n")
-        f.write("Classification Report:\n")
-        f.write(report + "\n")
-        if auc:
-            f.write(f"\nAUC: {auc:.4f}\n")
-            f.write(f"AP (PR-AUC): {ap:.4f}\n")
-    
-    print(f"\nSaved: {report_path}")
+    print(f"\nReports saved to: {reports_dir}")
 
 if __name__ == "__main__":
     main()
