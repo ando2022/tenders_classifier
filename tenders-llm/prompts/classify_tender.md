@@ -2044,6 +2044,7 @@ info(at)bak-economics.com
 - Kantonale volkswirtschaftliche Kennzahlen, Standortfaktoren und Prognosen
 - Ausschreibung von volkswirtschaftlichen Studien zum Thema Tiefzinsumfeld und Investitionen
 - (22193) 704 Durchführung der Umfrage zur Konsumentenstimmung 2023-2027
+- Wirkungsmonitoring Innosuisse
 - Vor- und nachgelagerten Wertschöpfungsstufen der Landwirtschaft
 - Nutzung und Wirkung von Zwischenverdiensten
 - Situation, Entwicklung und Vermeidung von Langzeiterwerbslosigkeit und Aussteuerungen
@@ -2063,17 +2064,6 @@ info(at)bak-economics.com
 - Thüringen Dekarbonisierung
 - Explorative Studie zur Untersuchung geschlechtsspezifischer Lohndifferenzen von Frauen und Männern
 - Studie zu Massnahmen zur verbesserten Nutzung von Freihandelsabkommen
-- Schätzung der Investitions- und Betriebskosten der Schweiz für die technische CO2 Entnahme und Speicherung bis 2050
-- Machbarkeitsstudie zur Auswertung der Preisauswirkungen des Industriezollabbaus
-- Empirische Studie zur Schätzung der Auswirkung ausländischer Industriepolitik auf die Schweizer Wirtschaft
-- Freihändiges Verfahren mit Konkurrenz Offerten: Vergleichsstudie Auswirkung Dekarbonisierung
-- Evaluation der nach der Aufhebung der Ausfuhrbeiträge eingeführten Begleitmassnahmen
-- Studien zur «Rolle von Handel, Preissignalen und Wettbewerb für eine nachhaltige Entwicklung»
-- Studie über die wirtschaftlichen Risiken für die Baubranche in der Schweiz bei einem Wegfall des MRA
-- EuroAirport
-- Studie zur Erarbeitung eines Monitoring- und Analyseinstruments der ökonomischen, sozialen und ökologischen Situation und Entwicklung in der Schweizer Land- und Ernährungswirtschaft
-- Zweite Regulierungsfolgenabschätzung zur Revision des Epidemiengesetzes
-- Optionen zur Regulierung von CO2-Pipelines und CO2-Untergrundspeichern in der Schweiz
 - Analyse Programmgebiet Interreg Oberrhein
 - Ausschreibung volkswirtschaftliche Auswirkungen der Digitalisierung in der Mobilität
 - Scoping study
@@ -2081,24 +2071,11 @@ info(at)bak-economics.com
 - Machbarkeitsstudie Arbeitsland NÖ 2019
 - Erstellung von Konjunktur- und Strukturberichten für NÖ 2020, 2021, 2022, 2023 uns 2024
 - Innovationsregion Mitteldeutschland - Technologiefeldanalyse
-- Marktdaten - Lieferung und Integration Reference number: 2020/0470
-- Supervision und gutachterliche Untersuchung des wirtschaftlichen Transformationsprozesses der Münchener Innenstadt sowie Stadtteil-/Quartierszentren
 - Market and economic research; polling and statistics
 - Digital Innovation Hubs Network
 - Industry Level Growth and Productivity Data with Special Focus on Intangible Assets
 - Study on the Macroeconomics of the Energy Union
 - Technologische und wirtschaftliche Analyse von Industrieverträgen in aktuellen und zukünftigen digitalen Wertschöpfungsketten - Smart 2018/0003
-- Provision of Advice and Assistance on Economic and Financial Valuation Services (SRB/OP/2/2022)
-- Overlapping crises (re)shaping the future of regional labour markets (OVERLAP)
-- Market Study on Competition in Online Payment Services
-- Development of a European Higher Education Sector Observatory
-- Comprehensive Study on the Internalisation of External Costs in Transport
-- Study on Circular Approaches for a Sustainable and Affordable Clean Energy Transition
-- Study on the Macro-economic Impacts of the Climate Transition
-- Analysis of Developments in EU Capital Flows in the Global Context
-- WKÖ-Bundessparte Handel-Konjunkturberichterstattung/Abschätzung Umsatzentwicklungen/Vorbereitungen KV-Verhandlungen
-- Study on value-added exposure estimates to assess spillovers and competitiveness (ECFIN)
-- Jährlicher wissenschaftlicher Beitrag zu den Tourismusberichten 2024-2027
 - Ausschreibung für die Entwicklung eines Tools zum Thema "Funktionale Stadtgebiete und Regionen in Europa".
 - Technological Transformation and Transitioning of Regional Economies
 - State of the European Territory
@@ -2106,15 +2083,6 @@ info(at)bak-economics.com
 - Gezielte Analyse "Metropolitan Industrial Spatial Strategies & Economic Sprawl"
 - Study on Prioritisation in the National and Regional Research and Innovation Strategies for Smart Specialisation
 - ESPON Developing a metropolitan-regional imaginary in Milan-Bologna urban region (IMAGINE)
-- Evaluation of the ESPON 2030 Programme
-- Determinants & opportunities for the socio-economic and spatial development of the Carpathian region
-- Barometer on localised household income in Europe (BAROWEALTH)
-- ESPON Targeted Analysis Challenges at EU’s North-East External Borders (CHANEBO)
-- Strategic Autonomy Rules for Trade in European Regions (STARTER)
-- Improving Local Intermediate Authorities’ crises preparedness and territorial Resilience (ResiLIAnce)
-- Re-Naturing Territorial Development for Climate Risk Adaptation (ReAdapt)
-- Territorial study on material cultural heritage satellite account
-- ESPON-Territorialstudie: Regionale Auswirkungen des Wohnungsmangels in städtischen Gebieten
 - Effizienzpotenzial in der OKP
 - Ergebnisse von öffentlicher und privater Forschung: Patente
 - Forschung und Entwicklung in Staat und Wirtschaft
@@ -2130,9 +2098,34 @@ info(at)bak-economics.com
 - Untersuchung der volkswirtschaftlichen Bedeutung des deutschen Bahnsektors auf Grundlage ihrer Beschäftigungswirkung
 - Schlüsseltechnologien und technologische Zukunftsfelder in den neuen Bundesländern: Bestandsaufnahme und Potentiale
 - Schwerpunktstudie "Technologiemärkte"
-- Evaluation „Corona Wirtschaftshilfen des Bundes: Soforthilfen, Überbrückungshilfen, Neustarthilfen, außerordentliche Wirtschaftshilfen, Härtefallhilfen“
-- Studie zur wirtschaftlichen und sozialen Lage von Soloselbständigen und hybrid Erwerbstätigen in der Kultur- und Kreativwirtschaft (KKW), dem öffentlichen Kulturbetrieb und Kulturberufen in Deutschland
-- Erstellung einer Studie zur regionalökonomischen Bedeutung der staatlichen Hochschulen im Freistaat Thüringen
+- Studie zu makroökonomischen Effekten der Volksinitative für eine Schweiz ohne synthetische Pestizide
+- Imzmir S3 Strategy
+- SECO Wirkungsanalyse Zweitwohnungsgesetz
+- Vorstudie zur Analyse des künftigen Bedarfs des Schweizer Arbeitsmarktes an ausländischen Arbeitskräften
+- Wertschöpfungsbeitrag
+- Aufsetzen eines Online Tool für den Intercultural Cities Index und der Pflege/Updaten dieses Tools.
+- Innovationsbericht Nordrhein-Westfalen - Vollbericht
+- Sozialhilfebezug in der Mehrjahresperspektive und im Lebensverlauf
+- Evaluation der Integrationsmassnahmen zur Vorbereitung auf die berufliche Eingliederung
+- Wirtschaftliche Situation von Personen mit einer IV-Rente
+- Ausgestaltung und Determinanten des Rentenübergangs
+- Die wirtschaftliche Situation der Bevölkerung im Erwerbs- und im Rentenalter
+- Evaluation «Finanzhilfen für familienergänzende Kinderbetreuung» – Wirkung der Finanzhilfen für Subventionserhöhungen von Kantonen und Gemeinden
+- Berechnung der volkswirtschaftlichen Kosten von Sucht
+- Finanzierung der gemeinwirtschaftlichen Leistungen, Anlagenutzungskosten und Defizitdeckungen der Spitäler
+- Die wirtschaftliche Situation von Familien in der Schweiz. Bedeutung von Geburt und Scheidung/Trennung
+- Evaluation der Wirksamkeit, Umsetzung, Ergebnisse und Wirtschaftlichkeit der Förderung des Normenwesens an das Deutsche Institut für Normung
+- Analyse der deutschen Exporte und Importe von Technologiegütern zur Nutzung erneuerbarer Energien und anderer Energietechnologiegüter
+- Untersuchung und Analyse der Patentsituation bei der Standardisierung von 5 G
+- Neue Beschaffungsmärkte identifizieren, Potenziale für die deutsche Wirtschaft nutzen, Wertschöpfungsketten ausbauen
+- Maritime Wertschöpfung und Beschäftigung in Deutschland
+- Big Data in der Makroökonomie
+- Entwicklung und Messung der Digitalisierung der Wirtschaft am Standort Deutschland
+- Evaluation des BMWi Förderprogramms gemäss der Richtlinie zu einer gemeinsamen Förderinitiative zur Förderung von Forschung und Entwicklung im Bereich der Elektromobilität vom 08.12.2017, die gemeinsam vom Bundeswirtschaftsministerium und Bundesumweltministerium veröffentlicht wurde.
+- Studie zum deutschen Telekommunikationsmarkt im internationalen Vergleich (umfassende und aktuelle Lagebeschreibung/-analyse im Festnetz- und Mobilfunkbereich)
+- Wirtschaftlichkeitslücke und Wertabschöpfung bei der GRWInfrastrukturförderung
+- Machbarkeitsstudie über die Erstellung eines Produzentenpreisindexes für Dienstleistungen im Bereich der Finanz- und Versicherungsdienstleistungen
+- Die Hürden gegen Ressourceneffizienz und Kreislaufwirtschaft abbauen
 
     ## Output format (strict JSON):
     {
@@ -2145,4 +2138,3 @@ info(at)bak-economics.com
     - Judge fitness based on thematic alignment with services and the spirit of examples, not just keyword overlap.
     - Prefer high precision among the top-K results; avoid over-inclusive "Yes".
     - If the text is outside scope (e.g., construction works, pure IT dev with no research), likely "No".
-    - Be language-agnostic; focus on meaning, not vocabulary.

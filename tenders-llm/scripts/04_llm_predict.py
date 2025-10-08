@@ -105,8 +105,9 @@ def run_split(split_name: str, ids: Optional[set], df: pd.DataFrame, base_prompt
                 except Exception:
                     continue
 
-    print(f"Running {split_name}: {len(df)} rows")
-    with open(out_path, "w", encoding="utf-8") as outf:
+    print(f"Running {split_name}: {len(df)} rows, {len(seen)} already done")
+    mode = "a" if seen else "w"
+    with open(out_path, mode, encoding="utf-8") as outf:
         for _, row in tqdm(df.iterrows(), total=len(df), desc=split_name):
             rid = str(row["id"])
             if rid in seen:
