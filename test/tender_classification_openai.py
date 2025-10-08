@@ -10,13 +10,12 @@ This script automates the classification of new business tenders using OpenAI's 
 """
 
 import pandas as pd
-import numpy as np
 import openai
 import os
-import re
-from typing import Tuple, List, Dict
+from typing import Tuple
 import warnings
 import time
+from tqdm import tqdm
 warnings.filterwarnings('ignore')
 
 class OpenAITenderClassifier:
@@ -48,22 +47,33 @@ class OpenAITenderClassifier:
         """
         print("Loading data from Excel files...")
         
-        # Load tenders data and filter for winning tenders (N2=TRUE)
-        tenders_df = pd.read_excel(tenders_file)
-        print(f"Loaded {len(tenders_df)} total tenders")
+        # Create progress bar for data loading
+        with tqdm(total=4, desc="Loading data", unit="file", ncols=100) as pbar:
+            # Load tenders data and filter for winning tenders (N2=TRUE)
+            pbar.set_description("Loading tenders data")
+            tenders_df = pd.read_excel(tenders_file)
+            pbar.update(1)
+            
+            # Filter for winning tenders (N2=1)
+            pbar.set_description("Filtering winning tenders")
+            winning_tenders = tenders_df[tenders_df['N2'] == 1].copy()
+            pbar.update(1)
+            
+            # Load prompt data sheets
+            pbar.set_description("Loading simap data")
+            simap_data = pd.read_excel(prompt_data_file, sheet_name='simap')
+            pbar.update(1)
+            
+            pbar.set_description("Loading keywords and services")
+            keywords_data = pd.read_excel(prompt_data_file, sheet_name='keywords')
+            services_data = pd.read_excel(prompt_data_file, sheet_name='services')
+            pbar.update(1)
         
-        # Filter for winning tenders (N2=TRUE)
-        winning_tenders = tenders_df[tenders_df['N2'] == True].copy()
-        print(f"Found {len(winning_tenders)} winning tenders (N2=TRUE)")
-        
-        # Load prompt data sheets
-        simap_data = pd.read_excel(prompt_data_file, sheet_name='simap')
-        keywords_data = pd.read_excel(prompt_data_file, sheet_name='keywords')
-        services_data = pd.read_excel(prompt_data_file, sheet_name='services')
-        
-        print(f"Loaded {len(simap_data)} new tenders to classify")
-        print(f"Loaded {len(keywords_data)} keywords")
-        print(f"Loaded {len(services_data)} services")
+        print(f"SUCCESS: Loaded {len(tenders_df)} total tenders")
+        print(f"SUCCESS: Found {len(winning_tenders)} winning tenders (N2=1)")
+        print(f"SUCCESS: Loaded {len(simap_data)} new tenders to classify")
+        print(f"SUCCESS: Loaded {len(keywords_data)} keywords")
+        print(f"SUCCESS: Loaded {len(services_data)} services")
         
         return winning_tenders, simap_data, keywords_data, services_data
     
@@ -81,31 +91,41 @@ class OpenAITenderClassifier:
         """
         print("Creating winning DNA profile...")
         
-        # Extract and combine text from winning tenders
-        winning_texts = []
-        for _, row in winning_tenders.iterrows():
-            title = str(row.get('title', '')) if pd.notna(row.get('title')) else ''
-            full_body = str(row.get('full-body text', '')) if pd.notna(row.get('full-body text')) else ''
+        # Create progress bar for DNA creation
+        with tqdm(total=3, desc="Building winning DNA", unit="step", ncols=100) as pbar:
+            # Extract and combine text from winning tenders
+            pbar.set_description("Processing winning tenders")
+            winning_texts = []
+            for _, row in winning_tenders.iterrows():
+                title = str(row.get('title', '')) if pd.notna(row.get('title')) else ''
+                full_body = str(row.get('full-body text', '')) if pd.notna(row.get('full-body text')) else ''
+                
+                combined_text = f"{title} {full_body}".strip()
+                if combined_text and len(combined_text) > 10:  # Filter out very short texts
+                    winning_texts.append(combined_text)
+            pbar.update(1)
             
-            combined_text = f"{title} {full_body}".strip()
-            if combined_text and len(combined_text) > 10:  # Filter out very short texts
-                winning_texts.append(combined_text)
-        
-        # Extract keywords
-        self.keywords = []
-        if not keywords_data.empty:
-            for _, row in keywords_data.iterrows():
-                keyword = str(row.iloc[0]) if pd.notna(row.iloc[0]) else ''
-                if keyword and keyword.strip():
-                    self.keywords.append(keyword.strip())
-        
-        # Extract services
-        self.services = []
-        if not services_data.empty:
-            for _, row in services_data.iterrows():
-                service = str(row.iloc[0]) if pd.notna(row.iloc[0]) else ''
-                if service and service.strip():
-                    self.services.append(service.strip())
+            # Extract keywords
+            pbar.set_description("Extracting keywords")
+            self.keywords = []
+            if not keywords_data.empty:
+                for _, row in keywords_data.iterrows():
+                    keyword = str(row['Studie']) if pd.notna(row['Studie']) else ''
+                    if keyword and keyword.strip():
+                        self.keywords.append(keyword.strip())
+            pbar.update(1)
+            
+            # Extract services
+            pbar.set_description("Extracting services")
+            self.services = []
+            if not services_data.empty:
+                for _, row in services_data.iterrows():
+                    service_name = str(row['service name']) if pd.notna(row['service name']) else ''
+                    service_desc = str(row['description']) if pd.notna(row['description']) else ''
+                    service = f"{service_name} {service_desc}".strip()
+                    if service and service.strip():
+                        self.services.append(service.strip())
+            pbar.update(1)
         
         # Create winning DNA description
         winning_dna_parts = []
@@ -138,8 +158,8 @@ ANALYSIS INSTRUCTIONS:
         
         self.winning_dna = "\n".join(winning_dna_parts)
         
-        print(f"Created winning DNA profile with {len(winning_texts)} examples")
-        print(f"Added {len(self.keywords)} keywords and {len(self.services)} services")
+        print(f"SUCCESS: Created winning DNA profile with {len(winning_texts)} examples")
+        print(f"SUCCESS: Added {len(self.keywords)} keywords and {len(self.services)} services")
         
         return self.winning_dna
     
@@ -199,7 +219,7 @@ Respond with ONLY the JSON object, no additional text.
             prompt = self.create_classification_prompt(clean_text)
             
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an expert business analyst. Always respond with valid JSON only."},
                     {"role": "user", "content": prompt}
@@ -249,20 +269,34 @@ Respond with ONLY the JSON object, no additional text.
         confidence_scores = []
         justifications = []
         
+        # Create progress bar
+        total_tenders = len(result_df)
+        progress_bar = tqdm(total=total_tenders, desc="Classifying tenders", 
+                          unit="tender", ncols=100, 
+                          bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]')
+        
         # Process each tender
         for idx, row in result_df.iterrows():
-            # Use 'topic' column for classification
-            tender_text = row.get('topic', '')
+            # Use 'Topic' column for classification
+            tender_text = row.get('Topic', '')
             
-            print(f"Processing tender {idx + 1}/{len(result_df)}...")
+            # Update progress bar description with current tender info
+            progress_bar.set_description(f"Processing tender {idx + 1}/{total_tenders}")
+            
             prediction, confidence, justification = self.classify_tender_with_openai(tender_text)
             
             predictions.append(prediction)
             confidence_scores.append(round(confidence, 1))
             justifications.append(justification)
             
+            # Update progress bar
+            progress_bar.update(1)
+            
             # Add small delay to avoid rate limiting
             time.sleep(0.5)
+        
+        # Close progress bar
+        progress_bar.close()
         
         # Add prediction columns
         result_df['Prediction'] = predictions
@@ -286,24 +320,34 @@ Respond with ONLY the JSON object, no additional text.
         """
         print(f"Saving results to {output_file}...")
         
-        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-            # Save updated simap data with predictions
-            simap_data.to_excel(writer, sheet_name='simap', index=False)
-            
-            # Save original keywords data
-            keywords_data.to_excel(writer, sheet_name='keywords', index=False)
-            
-            # Save original services data
-            services_data.to_excel(writer, sheet_name='services', index=False)
+        # Create progress bar for saving
+        with tqdm(total=3, desc="Saving results", unit="sheet", ncols=100) as pbar:
+            with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+                # Save updated simap data with predictions
+                pbar.set_description("Saving simap data")
+                simap_data.to_excel(writer, sheet_name='simap', index=False)
+                pbar.update(1)
+                
+                # Save original keywords data
+                pbar.set_description("Saving keywords data")
+                keywords_data.to_excel(writer, sheet_name='keywords', index=False)
+                pbar.update(1)
+                
+                # Save original services data
+                pbar.set_description("Saving services data")
+                services_data.to_excel(writer, sheet_name='services', index=False)
+                pbar.update(1)
         
-        print(f"Results saved successfully to {output_file}")
+        print(f"SUCCESS: Results saved successfully to {output_file}")
 
 def main():
     """Main function to run the tender classification process."""
-    print("=== OpenAI Tender Classification Script ===")
+    print("=" * 60)
+    print("OpenAI Tender Classification Script")
+    print("=" * 60)
     
     # OpenAI API key
-    api_key = "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"
+    api_key = "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"
     
     # File paths
     tenders_file = "../data/raw/tenders.xlsx"
@@ -311,42 +355,57 @@ def main():
     output_file = "prompt_data_with_predictions_openai.xlsx"
     
     # Check if input files exist
+    print("Checking input files...")
     if not os.path.exists(tenders_file):
-        print(f"Error: {tenders_file} not found!")
+        print(f"ERROR: {tenders_file} not found!")
         return
     
     if not os.path.exists(prompt_data_file):
-        print(f"Error: {prompt_data_file} not found!")
+        print(f"ERROR: {prompt_data_file} not found!")
         return
+    
+    print("SUCCESS: All input files found!")
+    print()
     
     try:
         # Initialize classifier
+        print("Initializing OpenAI classifier...")
         classifier = OpenAITenderClassifier(api_key)
+        print("SUCCESS: Classifier initialized!")
+        print()
         
         # Load data
         winning_tenders, simap_data, keywords_data, services_data = classifier.load_data(
             tenders_file, prompt_data_file
         )
+        print()
         
         # Create winning DNA
         classifier.create_winning_dna(winning_tenders, keywords_data, services_data)
+        print()
         
         # Classify new tenders
         classified_data = classifier.classify_tenders(simap_data)
+        print()
         
         # Save results
         classifier.save_results(classified_data, keywords_data, services_data, output_file)
+        print()
         
-        print("\n=== Classification Summary ===")
+        # Final summary
+        print("=" * 60)
+        print("CLASSIFICATION SUMMARY")
+        print("=" * 60)
         print(f"Total tenders classified: {len(classified_data)}")
         print(f"Predicted wins: {sum(classified_data['Prediction'])}")
         print(f"Predicted losses: {sum(~classified_data['Prediction'])}")
         print(f"Average confidence: {classified_data['Confidence_Score'].mean():.1f}%")
-        
-        print(f"\nResults saved to: {output_file}")
+        print(f"Results saved to: {output_file}")
+        print("=" * 60)
+        print("Classification complete!")
         
     except Exception as e:
-        print(f"Error during classification: {str(e)}")
+        print(f"ERROR during classification: {str(e)}")
         import traceback
         traceback.print_exc()
 
