@@ -1,0 +1,34 @@
+[
+  {
+    "version": "v2 (Title Only)",
+    "prompt_path": "prompts/classify_tender_balanced.md",
+    "use_full_text": false,
+    "test_cases": 50,
+    "errors": 0,
+    "accuracy": 0.9,
+    "precision": 0.95,
+    "recall": 0.8260869565217391,
+    "f1_score": 0.8837209302325583,
+    "tp": 19,
+    "fp": 1,
+    "tn": 26,
+    "fn": 4,
+    "timestamp": "2025-10-09T08:59:40.782235"
+  },
+  {
+    "version": "v3 (Full Text)",
+    "prompt_path": "prompts/classify_tender_balanced.md",
+    "use_full_text": true,
+    "test_cases": 50,
+    "errors": 0,
+    "accuracy": 0.88,
+    "precision": 0.9047619047619048,
+    "recall": 0.8260869565217391,
+    "f1_score": 0.8636363636363636,
+    "tp": 19,
+    "fp": 2,
+    "tn": 25,
+    "fn": 4,
+    "timestamp": "2025-10-09T09:06:04.257120"
+  }
+]
