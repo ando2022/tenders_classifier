@@ -29,12 +29,18 @@ def main():
     processed_dir = base / "data" / "processed"
     processed_dir.mkdir(parents=True, exist_ok=True)
     
-    # Load tenders
+    # Load tenders (prefer version with XML extractions if available)
+    tenders_with_xml_path = raw_dir / "tenders_with_xml.csv"
     tenders_path = raw_dir / "tenders.csv"
-    if not tenders_path.exists():
-        raise FileNotFoundError(f"Missing {tenders_path}")
     
-    df = pd.read_csv(tenders_path)
+    if tenders_with_xml_path.exists():
+        print(f"Using tenders with pre-extracted XML: {tenders_with_xml_path}")
+        df = pd.read_csv(tenders_with_xml_path)
+    elif tenders_path.exists():
+        print(f"Using basic tenders file: {tenders_path}")
+        df = pd.read_csv(tenders_path)
+    else:
+        raise FileNotFoundError(f"Missing {tenders_path}")
     required_cols = ["id", "title", "full_text"]
     for col in required_cols:
         if col not in df.columns:

@@ -1,0 +1,46 @@
+[
+  {
+    "method": "1. Baseline (Title Only)",
+    "accuracy": 0.94,
+    "precision": 0.4,
+    "recall": 1.0,
+    "f1_score": 0.5714285714285715,
+    "tp": 2,
+    "fp": 3,
+    "tn": 45,
+    "fn": 0
+  },
+  {
+    "method": "2. Hybrid Adaptive (XML if vague title)",
+    "accuracy": 0.9,
+    "precision": 0.2857142857142857,
+    "recall": 1.0,
+    "f1_score": 0.4444444444444445,
+    "tp": 2,
+    "fp": 5,
+    "tn": 43,
+    "fn": 0
+  },
+  {
+    "method": "3. With Negative Examples",
+    "accuracy": 0.96,
+    "precision": 0.5,
+    "recall": 1.0,
+    "f1_score": 0.6666666666666666,
+    "tp": 2,
+    "fp": 2,
+    "tn": 46,
+    "fn": 0
+  },
+  {
+    "method": "4. Title + First Sentence",
+    "accuracy": 0.94,
+    "precision": 0.4,
+    "recall": 1.0,
+    "f1_score": 0.5714285714285715,
+    "tp": 2,
+    "fp": 3,
+    "tn": 45,
+    "fn": 0
+  }
+]

@@ -7,10 +7,13 @@ import pandas as pd
 from pathlib import Path
 import re
 
-# Paths
-SOURCE_EXCEL = "/Users/anastasiiadobson/Desktop/CAPSTONE PROJECT/bak-economics/tenders-llm/data/raw/tenders_content.xlsx"
-OUT_CSV = "data/raw/tenders.csv"
-OUT_SELECTED = "data/raw/selected_ids.csv"
+# Get base directory (tenders-llm/)
+BASE_DIR = Path(__file__).parent.parent
+
+# Paths (relative to tenders-llm/)
+SOURCE_EXCEL = BASE_DIR / "data" / "raw" / "tenders_content.xlsx"
+OUT_CSV = BASE_DIR / "data" / "raw" / "tenders.csv"
+OUT_SELECTED = BASE_DIR / "data" / "raw" / "selected_ids.csv"
 
 def clean_html_xml(text):
     """Remove HTML/XML tags from text."""
@@ -53,17 +56,19 @@ def main():
     print(f"Tenders with full text (>100 chars): {df['has_full_text'].sum()} ({100*df['has_full_text'].sum()/len(df):.1f}%)")
     
     # Create a clean dataframe for the pipeline
+    # IMPORTANT: Keep BOTH raw XML (for extraction) and cleaned text (for fallback)
     df_clean = pd.DataFrame({
         'id': range(1, len(df) + 1),
         'title': df['title'].astype(str),
-        'full_text': df['full_text_clean'].fillna(df['title'].astype(str)),  # Use title as fallback
+        'full_text': df['full_text_clean'].fillna(df['title'].astype(str)),  # Cleaned version
+        'full_text_raw': df['full text'].astype(str),  # Raw XML for extraction
         'date': pd.to_datetime(df['deadline'], errors='coerce'),
         'label': df['N2'].astype(int),
         'has_full_text': df['has_full_text']
     })
     
     # Save tenders.csv
-    os.makedirs("data/raw", exist_ok=True)
+    OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     df_clean.to_csv(OUT_CSV, index=False, encoding='utf-8')
     print(f"\nSaved {len(df_clean)} tenders to {OUT_CSV}")
     

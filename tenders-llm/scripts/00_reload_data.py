@@ -1,14 +1,18 @@
 """
-Reload data from the correct Google Drive source and prepare it for the LLM pipeline.
+Reload data from the local tenders.xlsx file and prepare it for the LLM pipeline.
+NOTE: This is the legacy script. Use 00_reload_data_with_fulltext.py instead.
 """
 import os
 import pandas as pd
 from pathlib import Path
 
-# Paths
-SOURCE_EXCEL = "/Users/anastasiiadobson/Library/CloudStorage/GoogleDrive-mybestdayistoday@gmail.com/.shortcut-targets-by-id/1Z7_7yHHWe-c-2QxwpkKB7i9KO3i9dwsR/BAK-Economics/Data/data_for_modelling/tenders.xlsx"
-OUT_CSV = "data/raw/tenders.csv"
-OUT_SELECTED = "data/raw/selected_ids.csv"
+# Get base directory (tenders-llm/)
+BASE_DIR = Path(__file__).parent.parent
+
+# Paths (relative to tenders-llm/)
+SOURCE_EXCEL = BASE_DIR / "data" / "raw" / "tenders.xlsx"
+OUT_CSV = BASE_DIR / "data" / "raw" / "tenders.csv"
+OUT_SELECTED = BASE_DIR / "data" / "raw" / "selected_ids.csv"
 
 def main():
     # Read the TITLES sheet
@@ -29,7 +33,7 @@ def main():
     })
     
     # Save tenders.csv
-    os.makedirs("data/raw", exist_ok=True)
+    OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     df_clean.to_csv(OUT_CSV, index=False, encoding='utf-8')
     print(f"\nSaved {len(df_clean)} tenders to {OUT_CSV}")
     
