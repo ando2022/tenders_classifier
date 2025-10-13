@@ -33,6 +33,8 @@ tender-system/
 
 ## 🚀 Quick Start
 
+### 📖 **For detailed setup instructions, see [STREAMLIT_SETUP.md](STREAMLIT_SETUP.md)**
+
 ### 1. Install Dependencies
 
 ```bash
