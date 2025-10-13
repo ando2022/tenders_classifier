@@ -155,7 +155,7 @@ import os
 os.makedirs("unlabeled", exist_ok=True)
 output_file = "unlabeled/simap_weekly.csv"
 merged_df.to_csv(output_file, index=False, encoding='utf-8')
-print(f"\n✅ Data saved to {output_file}")
+print(f"\n[SUCCESS] Data saved to {output_file}")
 print(f"   Total records: {len(merged_df)}")
 print(f"   Date range: {pub_date_from} to {pub_date_to} (last 7 days)")
 print(f"   Columns: {len(merged_df.columns)}")

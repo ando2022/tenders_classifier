@@ -64,14 +64,17 @@ class ScraperLog(Base):
 
 
 # Database setup
-DB_PATH = os.getenv('DB_PATH', '/Users/anastasiiadobson/Library/CloudStorage/Dropbox/WORK/BOOTCAMP/CAPSTONE PROJECT/bak-economics/tender-system/db/tenders.db')
+# Use relative path from the database module location
+DB_DIR = os.path.join(os.path.dirname(__file__), '..', 'db')
+os.makedirs(DB_DIR, exist_ok=True)
+DB_PATH = os.getenv('DB_PATH', os.path.join(DB_DIR, 'tenders.db'))
 engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
 SessionLocal = sessionmaker(bind=engine)
 
 def init_db():
     """Initialize database tables"""
     Base.metadata.create_all(engine)
-    print(f"✅ Database initialized at {DB_PATH}")
+    print(f"[SUCCESS] Database initialized at {DB_PATH}")
 
 def get_session():
     """Get database session"""
