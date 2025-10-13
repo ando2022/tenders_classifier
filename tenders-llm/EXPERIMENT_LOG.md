@@ -203,3 +203,32 @@ Actual Yes 20   3  ← Much better!
 
 *Last Updated: 2024-10-09 09:10*
 
+
+
+---
+
+## Experiment: 50-case validation (Title-only)
+- Date: 2025-10-09 10:03
+- IDs: data/processed/val_ids_test50.txt
+- Prompt: prompts/classify_tender_balanced.md (v2)
+- Input: Title-only
+- Results file: data/processed/preds_title_50_from_val_ids_test50.jsonl
+
+Metrics:
+- Accuracy: 0.920 (TP=20, FP=1, TN=26, FN=3)
+- Precision: 0.952
+- Recall: 0.870
+
+
+
+## Experiment: 50-case validation (Full-text)
+- Date: 2025-10-09 12:08
+- IDs: data/processed/val_ids_test50.txt
+- Prompt: prompts/classify_tender_balanced.md (v2)
+- Input: Title + Full text (up to 4000 chars)
+- Results file: data/processed/preds_fulltext_50_from_val_ids_test50.jsonl
+
+Metrics:
+- Accuracy: 0.880 (TP=19, FP=2, TN=25, FN=4)
+- Precision: 0.905
+- Recall: 0.826
