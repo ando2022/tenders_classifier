@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 import streamlit as st
 import pandas as pd
+import os
+import io
 from datetime import datetime, timedelta
 from sqlalchemy import desc
 
@@ -192,6 +194,37 @@ elif page == "✅ Relevant Tenders":
             file = exporter.export_relevant_tenders(min_confidence=min_confidence, format='excel')
             if file:
                 st.success(f"✅ Exported to {file}")
+                # Offer immediate download in-browser
+                try:
+                    with open(file, 'rb') as f:
+                        data = f.read()
+                    st.download_button(
+                        label="⬇️ Download Excel",
+                        data=data,
+                        file_name=os.path.basename(file),
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        type="primary"
+                    )
+                except Exception as dl_exc:
+                    st.warning(f"Download unavailable: {dl_exc}")
+
+        # Optional CSV export
+        if st.button("📄 Export CSV"):
+            from export_client_report import ClientReportExporter
+            exporter = ClientReportExporter()
+            csv_path = exporter.export_relevant_tenders(min_confidence=min_confidence, format='csv')
+            if csv_path:
+                try:
+                    with open(csv_path, 'rb') as f:
+                        csv_bytes = f.read()
+                    st.download_button(
+                        label="⬇️ Download CSV",
+                        data=csv_bytes,
+                        file_name=os.path.basename(csv_path),
+                        mime="text/csv"
+                    )
+                except Exception as csv_exc:
+                    st.warning(f"CSV download unavailable: {csv_exc}")
     
     relevant = session.query(Tender).filter(
         Tender.is_relevant == True,

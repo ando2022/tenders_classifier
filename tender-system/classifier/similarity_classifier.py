@@ -35,6 +35,21 @@ class SimilarityClassifier:
         
         # Load existing model if available
         self.load_model()
+
+        # Auto-load positive cases from DB on first init if none loaded
+        # This ensures the emergency classifier immediately leverages
+        # previously confirmed positive tenders (titles + full texts)
+        try:
+            if not self.positive_cases:
+                from database.models import get_session  # lazy import to avoid cycles
+                session = get_session()
+                # Load high-confidence positives as exemplars
+                self.add_positive_cases_from_database(session, min_confidence=80.0)
+                if self.positive_cases and not getattr(self, 'tfidf_matrix', None):
+                    self.build_model()
+                    self.save_model()
+        except Exception as autoload_exc:
+            logger.warning(f"Emergency classifier DB autoload skipped: {autoload_exc}")
     
     def add_positive_case(self, title: str, description: str = None, 
                          confidence: float = 1.0, source: str = "manual"):

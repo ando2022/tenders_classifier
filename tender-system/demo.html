@@ -148,6 +148,7 @@
             <button onclick="showPage('relevant')" id="btn-relevant">✅ Relevant Tenders</button>
             <button onclick="showPage('search')" id="btn-search">🔍 Search</button>
             <button onclick="showPage('scraper')" id="btn-scraper">🚀 Run Scraper</button>
+            <button onclick="showPage('emergency')" id="btn-emergency">🚨 Emergency Classifier</button>
         </div>
         
         <div class="content">
@@ -222,8 +223,14 @@
             <!-- Relevant Tenders -->
             <div id="relevant" class="page hidden">
                 <h2>✅ Relevant Tenders</h2>
-                <div class="status-info">
-                    <strong>📥 Export Options:</strong> You can export relevant tenders to Excel/CSV format with German titles and summaries.
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="status-info" style="margin: 0; flex: 1; margin-right: 20px;">
+                        <strong>📥 Export Options:</strong> You can export relevant tenders to Excel/CSV format with German titles and summaries.
+                    </div>
+                    <button onclick="downloadExcel()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 1.1em; font-weight: bold;">
+                        📥 Download Excel
+                    </button>
                 </div>
                 
                 <div class="tender-card">
@@ -288,6 +295,148 @@
                             ▶️ Run Scraper
                         </button>
                         <div id="scraper-results" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Emergency Classifier -->
+            <div id="emergency" class="page hidden">
+                <h2>🚨 Emergency Classifier</h2>
+                <div class="status-info">
+                    <strong>💡 Emergency fallback system:</strong> Uses cosine similarity when OpenAI is unavailable or to save costs.
+                </div>
+                
+                <!-- Statistics Tab -->
+                <div style="margin: 20px 0;">
+                    <h3>📊 Emergency Classifier Statistics</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <div class="metric">
+                            <h3>Positive Cases</h3>
+                            <div class="value">13</div>
+                        </div>
+                        <div class="metric">
+                            <h3>Model Status</h3>
+                            <div class="value">✅ Ready</div>
+                        </div>
+                        <div class="metric">
+                            <h3>Similarity Threshold</h3>
+                            <div class="value">0.30</div>
+                        </div>
+                        <div class="metric">
+                            <h3>Sources</h3>
+                            <div class="value">2</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Test Classification -->
+                <div style="margin: 20px 0;">
+                    <h3>🧪 Test Emergency Classification</h3>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin: 20px 0;">
+                        <div>
+                            <input type="text" class="search-box" id="test-title" placeholder="Enter tender title to test..." style="margin-bottom: 10px;">
+                            <textarea class="search-box" id="test-description" placeholder="Enter tender description (optional)..." style="height: 80px; resize: vertical;"></textarea>
+                        </div>
+                        <div>
+                            <button onclick="testClassification()" style="background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 1.1em; width: 100%;">
+                                🔍 Classify
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="classification-result" style="display: none; margin-top: 20px; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+                        <!-- Results will appear here -->
+                    </div>
+                </div>
+                
+                <!-- Quick Tests -->
+                <div style="margin: 20px 0;">
+                    <h3>🚀 Quick Tests</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <button onclick="quickTest('economic')" style="background: #28a745; color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer;">
+                            🧪 Test Economic Research
+                        </button>
+                        <button onclick="quickTest('it')" style="background: #dc3545; color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer;">
+                            🧪 Test IT Maintenance
+                        </button>
+                        <button onclick="quickTest('statistical')" style="background: #ffc107; color: #212529; border: none; padding: 15px; border-radius: 5px; cursor: pointer;">
+                            🧪 Test Statistical Study
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Positive Cases Management -->
+                <div style="margin: 20px 0;">
+                    <h3>📚 Manage Positive Cases</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
+                        <h4>➕ Add Positive Case</h4>
+                        <div style="margin: 15px 0;">
+                            <input type="text" class="search-box" id="new-title" placeholder="Economic Analysis of..." style="margin-bottom: 10px;">
+                            <textarea class="search-box" id="new-description" placeholder="Detailed description of the economic research..." style="height: 60px; resize: vertical; margin-bottom: 10px;"></textarea>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <label>Confidence:</label>
+                                <input type="range" id="confidence-slider" min="0" max="100" value="95" style="flex: 1;">
+                                <span id="confidence-value">95%</span>
+                            </div>
+                        </div>
+                        <button onclick="addPositiveCase()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer;">
+                            ➕ Add Positive Case
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4>📝 Recent Positive Cases</h4>
+                        <div class="tender-card">
+                            <div class="tender-title">Economic Analysis of Regional Development Patterns</div>
+                            <div class="tender-summary">Comprehensive economic analysis of regional development patterns and growth opportunities in target regions.</div>
+                            <div class="tender-meta">
+                                <span><strong>Confidence:</strong> 95%</span>
+                                <span><strong>Source:</strong> sample</span>
+                            </div>
+                        </div>
+                        <div class="tender-card">
+                            <div class="tender-title">Statistical Survey on Employment Trends</div>
+                            <div class="tender-summary">Large-scale statistical survey to analyze employment trends and labor market dynamics.</div>
+                            <div class="tender-meta">
+                                <span><strong>Confidence:</strong> 92%</span>
+                                <span><strong>Source:</strong> sample</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings -->
+                <div style="margin: 20px 0;">
+                    <h3>⚙️ Emergency Classifier Settings</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
+                            <h4>🎯 Similarity Threshold</h4>
+                            <div style="margin: 15px 0;">
+                                <input type="range" id="threshold-slider" min="10" max="90" value="30" style="width: 100%; margin: 10px 0;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>More Lenient (10%)</span>
+                                    <span><strong>Current: <span id="threshold-value">30%</span></strong></span>
+                                    <span>More Strict (90%)</span>
+                                </div>
+                            </div>
+                            <button onclick="updateThreshold()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                                🔄 Update Threshold
+                            </button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
+                            <h4>🚀 Quick Actions</h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <button onclick="rebuildModel()" style="background: #17a2b8; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer;">
+                                    🔄 Rebuild Model
+                                </button>
+                                <button onclick="loadFromDatabase()" style="background: #6f42c1; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer;">
+                                    📥 Load from Database
+                                </button>
+                                <button onclick="showSystemInfo()" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer;">
+                                    📋 System Information
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -381,6 +530,155 @@
                 `;
             }, 2000);
         }
+        
+        // Download functionality
+        function downloadExcel() {
+            alert('📥 Downloading Excel file...\n\nIn the full system, this would download:\n• relevant_tenders_20251013_154217.xlsx\n• German titles and summaries\n• Publication dates and deadlines\n• AI reasoning and confidence scores');
+        }
+        
+        // Emergency Classifier Functions
+        function testClassification() {
+            const title = document.getElementById('test-title').value;
+            const description = document.getElementById('test-description').value;
+            const resultDiv = document.getElementById('classification-result');
+            
+            if (!title.trim()) {
+                alert('Please enter a tender title to test.');
+                return;
+            }
+            
+            // Simulate classification results
+            const isRelevant = Math.random() > 0.3; // 70% chance of being relevant
+            const confidence = Math.floor(Math.random() * 40) + (isRelevant ? 60 : 20);
+            const similarity = (confidence / 100).toFixed(3);
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <strong>Title:</strong> ${title}
+                    </div>
+                    <div style="text-align: center;">
+                        ${isRelevant ? 
+                            '<span style="color: #28a745; font-size: 1.2em;">✅ RELEVANT</span>' : 
+                            '<span style="color: #dc3545; font-size: 1.2em;">❌ NOT RELEVANT</span>'
+                        }
+                    </div>
+                    <div style="text-align: center;">
+                        <strong>Confidence: ${confidence}%</strong><br>
+                        <small>Similarity: ${similarity}</small>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 3px;">
+                    <strong>Reasoning:</strong> ${isRelevant ? 
+                        'High similarity to known relevant economic research tenders. This tender matches patterns from previous successful cases.' :
+                        'Low similarity to known relevant tenders. Best match shows some economic keywords but below threshold for relevance.'
+                    }
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #6c757d;">
+                    <strong>Best Match:</strong> Economic Analysis of Regional Development Patterns
+                </div>
+            `;
+        }
+        
+        function quickTest(type) {
+            let title, description, expected;
+            
+            switch(type) {
+                case 'economic':
+                    title = 'Economic Analysis of Regional Development';
+                    description = 'Comprehensive economic analysis of regional development patterns';
+                    expected = true;
+                    break;
+                case 'it':
+                    title = 'IT Infrastructure Maintenance';
+                    description = 'Technical maintenance and support for IT systems';
+                    expected = false;
+                    break;
+                case 'statistical':
+                    title = 'Statistical Research on Employment';
+                    description = 'Research project analyzing employment statistics and trends';
+                    expected = true;
+                    break;
+            }
+            
+            document.getElementById('test-title').value = title;
+            document.getElementById('test-description').value = description;
+            
+            // Show result immediately for demo
+            const resultDiv = document.getElementById('classification-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <strong>Title:</strong> ${title}
+                    </div>
+                    <div style="text-align: center;">
+                        ${expected ? 
+                            '<span style="color: #28a745; font-size: 1.2em;">✅ RELEVANT</span>' : 
+                            '<span style="color: #dc3545; font-size: 1.2em;">❌ NOT RELEVANT</span>'
+                        }
+                    </div>
+                    <div style="text-align: center;">
+                        <strong>Confidence: ${expected ? '87' : '23'}%</strong><br>
+                        <small>Similarity: ${expected ? '0.872' : '0.234'}</small>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 3px;">
+                    <strong>Reasoning:</strong> ${expected ? 
+                        'High similarity to known relevant economic research tenders. This tender matches patterns from previous successful cases.' :
+                        'Low similarity to known relevant tenders. Best match shows some infrastructure keywords but below threshold for economic relevance.'
+                    }
+                </div>
+            `;
+        }
+        
+        function addPositiveCase() {
+            const title = document.getElementById('new-title').value;
+            const description = document.getElementById('new-description').value;
+            const confidence = document.getElementById('confidence-slider').value;
+            
+            if (!title.trim()) {
+                alert('Please enter a title for the positive case.');
+                return;
+            }
+            
+            alert(`✅ Added positive case!\n\nTitle: ${title}\nConfidence: ${confidence}%\n\nIn the full system, this would be saved to the emergency classifier model.`);
+            
+            // Clear form
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-description').value = '';
+            document.getElementById('confidence-slider').value = 95;
+            document.getElementById('confidence-value').textContent = '95%';
+        }
+        
+        function updateThreshold() {
+            const newThreshold = document.getElementById('threshold-slider').value;
+            document.getElementById('threshold-value').textContent = newThreshold + '%';
+            alert(`🔄 Threshold updated to ${newThreshold}%\n\nIn the full system, this would update the similarity threshold for classification.`);
+        }
+        
+        function rebuildModel() {
+            alert('🔄 Rebuilding model...\n\nIn the full system, this would rebuild the TF-IDF model with all positive cases.');
+        }
+        
+        function loadFromDatabase() {
+            alert('📥 Loading from database...\n\nIn the full system, this would load high-confidence relevant tenders from the database as positive cases.');
+        }
+        
+        function showSystemInfo() {
+            alert(`📋 System Information:\n\n• Model File: classifier/similarity_model.pkl\n• Positive Cases: 13\n• Vectorizer: Fitted\n• Threshold: 0.30\n• Sources: sample, manual\n\nIn the full system, this would show real-time system status.`);
+        }
+        
+        // Update confidence value display
+        document.getElementById('confidence-slider').addEventListener('input', function() {
+            document.getElementById('confidence-value').textContent = this.value + '%';
+        });
+        
+        // Update threshold value display
+        document.getElementById('threshold-slider').addEventListener('input', function() {
+            document.getElementById('threshold-value').textContent = this.value + '%';
+        });
     </script>
 </body>
 </html>
