@@ -71,7 +71,7 @@ def filter_to_essential(input_file, output_file):
         if col == 'project-info_offerLanguages':
             essential_columns['Language of Procedure'] = col
     
-    print(f"\n✅ Found {len(essential_columns)} essential fields:")
+    print(f"\n[SUCCESS] Found {len(essential_columns)} essential fields:")
     for display_name, col_name in essential_columns.items():
         print(f"   {display_name}: {col_name}")
     
@@ -85,14 +85,18 @@ def filter_to_essential(input_file, output_file):
     print(f"\nSaving filtered data to {output_file}...")
     df_filtered.to_csv(output_file, index=False, encoding='utf-8')
     
-    print(f"\n✅ Filtering complete!")
+    print(f"\n[SUCCESS] Filtering complete!")
     print(f"   Original columns: {df.shape[1]}")
     print(f"   Essential columns: {df_filtered.shape[1]}")
     print(f"   Rows: {df_filtered.shape[0]}")
     
     # Show sample
-    print(f"\n📋 Sample data:")
-    print(df_filtered.head(3).to_string())
+    print(f"\nSample data:")
+    try:
+        print(df_filtered.head(3).to_string())
+    except UnicodeEncodeError:
+        print("   (Data preview skipped due to special characters)")
+        print(f"   {len(df_filtered)} rows x {len(df_filtered.columns)} columns")
     
     return df_filtered
 

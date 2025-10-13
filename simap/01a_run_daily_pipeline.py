@@ -10,21 +10,21 @@ import os
 def run_command(description, command):
     """Run a command and handle errors"""
     print("\n" + "="*80)
-    print(f"⏳ {description}")
+    print(f"[RUNNING] {description}")
     print("="*80)
     
     result = subprocess.run(command, shell=True)
     
     if result.returncode != 0:
-        print(f"\n❌ Error in step: {description}")
+        print(f"\n[ERROR] Error in step: {description}")
         sys.exit(1)
     
-    print(f"✅ {description} - Complete!")
+    print(f"[DONE] {description} - Complete!")
     return result.returncode
 
 def main():
     print("\n" + "="*80)
-    print("🚀 DAILY SIMAP PIPELINE - STARTING")
+    print("DAILY SIMAP PIPELINE - STARTING")
     print("="*80)
     
     # Change to script directory
@@ -56,9 +56,9 @@ def main():
     )
     
     print("\n" + "="*80)
-    print("🎉 DAILY PIPELINE COMPLETE!")
+    print("DAILY PIPELINE COMPLETE!")
     print("="*80)
-    print("\n📁 Output files:")
+    print("\nOutput files:")
     print("   - unlabeled/simap.csv (raw data)")
     print("   - unlabeled/simap_flat.csv (flattened data)")
     print("   - unlabeled/simap_essential.csv (11 essential fields)")

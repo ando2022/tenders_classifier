@@ -164,7 +164,7 @@ def process_dataframe_robust(df):
         df_new = df_new.drop(columns=[col])
         print(f"  Removed nested: {col}")
     
-    print(f"✅ Robust flattening complete!")
+    print(f"[SUCCESS] Robust flattening complete!")
     print(f"   Original columns: {original_cols}")
     print(f"   Final columns: {df_new.shape[1]}")
     print(f"   New columns added: {df_new.shape[1] - original_cols + len(original_nested_cols)}")
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     print(f"Saving to {output_file}...")
     df_processed.to_csv(output_file, index=False, encoding='utf-8')
     
-    print("✅ Complete! All nested data robustly flattened.")
+    print("[SUCCESS] Complete! All nested data robustly flattened.")
     
     # Show sample of key extracted fields
     print("\nSample extracted fields:")
