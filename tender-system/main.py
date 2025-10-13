@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from database.models import init_db, get_session, Tender, ScraperLog
 from scrapers.simap_scraper import SimapScraper
 from classifier.llm_classifier import TenderClassifier
+from classifier.similarity_classifier import SimilarityClassifier
 import logging
 
 logging.basicConfig(
@@ -27,7 +28,10 @@ class TenderOrchestrator:
     
     def __init__(self):
         self.session = get_session()
+        
+        # Initialize classifiers
         self.classifier = TenderClassifier()
+        self.emergency_classifier = SimilarityClassifier()
         
         # Initialize scrapers
         self.scrapers = {
@@ -35,6 +39,33 @@ class TenderOrchestrator:
         }
         
         logger.info("✅ Orchestrator initialized")
+    
+    def add_positive_case(self, title: str, description: str = None, 
+                         confidence: float = 1.0, source: str = "manual"):
+        """
+        Add a positive case to the emergency classifier.
+        
+        Args:
+            title: Tender title
+            description: Tender description
+            confidence: Confidence score (0-1)
+            source: Source of the positive case
+        """
+        self.emergency_classifier.add_positive_case(title, description, confidence, source)
+        self.emergency_classifier.build_model()
+        self.emergency_classifier.save_model()
+        logger.info(f"✅ Added positive case: {title[:50]}...")
+    
+    def use_emergency_classifier_only(self, source: str = 'simap', days_back: int = 7):
+        """
+        Run scraper using only the emergency classifier (no OpenAI).
+        
+        Args:
+            source: Source name ('simap', etc.)
+            days_back: How many days back to fetch tenders
+        """
+        logger.info("🚨 Running with emergency classifier only (no OpenAI)")
+        return self.run_scraper(source, days_back, classify=True)
     
     def run_scraper(self, source: str = 'simap', days_back: int = 7, classify: bool = True):
         """
@@ -80,8 +111,30 @@ class TenderOrchestrator:
             # 3. Classify if enabled
             classifications = {}
             if classify:
-                classification_results = self.classifier.classify_batch(tenders)
-                classifications = {r['tender_id']: r for r in classification_results}
+                try:
+                    # Try OpenAI classification first
+                    classification_results = self.classifier.classify_batch(tenders)
+                    classifications = {r['tender_id']: r for r in classification_results}
+                    logger.info("✅ Used OpenAI classification")
+                except Exception as e:
+                    logger.warning(f"⚠️ OpenAI classification failed: {e}")
+                    logger.info("🔄 Switching to emergency similarity classifier...")
+                    
+                    # Fallback to similarity classifier
+                    try:
+                        # Ensure emergency classifier has positive cases
+                        if not self.emergency_classifier.positive_cases:
+                            logger.info("📚 Loading positive cases from database...")
+                            self.emergency_classifier.add_positive_cases_from_database(
+                                self.session, min_confidence=80.0
+                            )
+                        
+                        classification_results = self.emergency_classifier.classify_batch(tenders)
+                        classifications = {r['tender_id']: r for r in classification_results}
+                        logger.info("✅ Used emergency similarity classification")
+                    except Exception as emergency_e:
+                        logger.error(f"❌ Emergency classification also failed: {emergency_e}")
+                        logger.info("📝 Proceeding without classification")
             
             # 4. Store in database
             new_count, updated_count = self._store_tenders(tenders, classifications)
