@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database.models import init_db, get_session, Tender, ScraperLog
 from main import TenderOrchestrator
+from classifier.similarity_classifier import SimilarityClassifier
 
 # Page config
 st.set_page_config(
@@ -32,7 +33,7 @@ st.sidebar.markdown("---")
 # Navigation
 page = st.sidebar.radio(
     "Navigation",
-    ["📊 Dashboard", "📋 All Tenders", "✅ Relevant Tenders", "🔍 Search", "🚀 Run Scraper", "📈 Analytics"]
+    ["📊 Dashboard", "📋 All Tenders", "✅ Relevant Tenders", "🔍 Search", "🚀 Run Scraper", "🚨 Emergency Classifier", "📈 Analytics"]
 )
 
 st.sidebar.markdown("---")
@@ -264,6 +265,206 @@ elif page == "🚀 Run Scraper":
             st.success("✅ Scraper completed!")
             st.rerun()
 
+
+elif page == "🚨 Emergency Classifier":
+    st.title("🚨 Emergency Classifier")
+    st.info("💡 **Emergency fallback system using cosine similarity when OpenAI is unavailable or to save costs.**")
+    
+    # Initialize emergency classifier
+    @st.cache_resource
+    def get_emergency_classifier():
+        return SimilarityClassifier()
+    
+    emergency_classifier = get_emergency_classifier()
+    
+    # Tabs for different functions
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Statistics", "🧪 Test Classification", "📚 Manage Positive Cases", "⚙️ Settings"])
+    
+    with tab1:
+        st.subheader("📊 Emergency Classifier Statistics")
+        
+        stats = emergency_classifier.get_stats()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Positive Cases", stats['positive_cases_count'])
+        with col2:
+            st.metric("Model Status", "✅ Ready" if stats['model_fitted'] else "❌ Not Ready")
+        with col3:
+            st.metric("Similarity Threshold", f"{stats['similarity_threshold']:.2f}")
+        with col4:
+            st.metric("Sources", len(stats['sources']))
+        
+        if stats['latest_case']:
+            st.caption(f"Latest case added: {stats['latest_case'].strftime('%Y-%m-%d %H:%M')}")
+        
+        # Show recent positive cases
+        if emergency_classifier.positive_cases:
+            st.subheader("📝 Recent Positive Cases")
+            recent_cases = emergency_classifier.positive_cases[-5:]
+            for i, case in enumerate(reversed(recent_cases), 1):
+                with st.expander(f"{i}. {case['title'][:60]}..."):
+                    st.write(f"**Description:** {case['description'][:200]}...")
+                    st.write(f"**Confidence:** {case['confidence']:.2f}")
+                    st.write(f"**Source:** {case['source']}")
+                    st.write(f"**Added:** {case['added_at'].strftime('%Y-%m-%d %H:%M')}")
+    
+    with tab2:
+        st.subheader("🧪 Test Emergency Classification")
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            test_title = st.text_input("Tender Title", placeholder="Enter a tender title to test...")
+            test_description = st.text_area("Description (Optional)", placeholder="Enter tender description...")
+        
+        with col2:
+            if st.button("🔍 Classify", type="primary"):
+                if test_title:
+                    with st.spinner("Classifying..."):
+                        result = emergency_classifier.classify_tender(test_title, test_description)
+                        
+                        # Display results
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            if result['is_relevant']:
+                                st.success(f"✅ **RELEVANT** ({result['confidence_score']:.1f}%)")
+                            else:
+                                st.error(f"❌ **NOT RELEVANT** ({result['confidence_score']:.1f}%)")
+                        
+                        with col_b:
+                            st.info(f"🎯 Similarity: {result['similarity_score']:.3f}")
+                        
+                        st.write(f"**Reasoning:** {result['reasoning']}")
+                        if result['best_match']:
+                            st.write(f"**Best Match:** {result['best_match']}")
+                        st.write(f"**Method:** {result['classification_method']}")
+                else:
+                    st.warning("Please enter a tender title to test.")
+        
+        # Quick test buttons
+        st.subheader("🚀 Quick Tests")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("Test Economic Research"):
+                result = emergency_classifier.classify_tender(
+                    "Economic Analysis of Regional Development",
+                    "Comprehensive economic analysis of regional development patterns"
+                )
+                st.write(f"Result: {'✅ Relevant' if result['is_relevant'] else '❌ Not Relevant'} ({result['confidence_score']:.1f}%)")
+        
+        with col2:
+            if st.button("Test IT Maintenance"):
+                result = emergency_classifier.classify_tender(
+                    "IT Infrastructure Maintenance",
+                    "Technical maintenance and support for IT systems"
+                )
+                st.write(f"Result: {'✅ Relevant' if result['is_relevant'] else '❌ Not Relevant'} ({result['confidence_score']:.1f}%)")
+        
+        with col3:
+            if st.button("Test Statistical Study"):
+                result = emergency_classifier.classify_tender(
+                    "Statistical Research on Employment",
+                    "Research project analyzing employment statistics and trends"
+                )
+                st.write(f"Result: {'✅ Relevant' if result['is_relevant'] else '❌ Not Relevant'} ({result['confidence_score']:.1f}%)")
+    
+    with tab3:
+        st.subheader("📚 Manage Positive Cases")
+        
+        # Add new positive case
+        st.subheader("➕ Add Positive Case")
+        
+        with st.form("add_positive_case"):
+            new_title = st.text_input("Title *", placeholder="Economic Analysis of...")
+            new_description = st.text_area("Description", placeholder="Detailed description of the economic research...")
+            new_confidence = st.slider("Confidence", 0.0, 1.0, 0.95, 0.01)
+            new_source = st.selectbox("Source", ["manual", "database", "verified"])
+            
+            if st.form_submit_button("➕ Add Positive Case", type="primary"):
+                if new_title:
+                    emergency_classifier.add_positive_case(
+                        title=new_title,
+                        description=new_description,
+                        confidence=new_confidence,
+                        source=new_source
+                    )
+                    emergency_classifier.build_model()
+                    emergency_classifier.save_model()
+                    st.success(f"✅ Added positive case: {new_title[:50]}...")
+                    st.rerun()
+                else:
+                    st.error("Please enter a title.")
+        
+        # Load from database
+        st.subheader("📥 Load from Database")
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            min_confidence = st.slider("Minimum Confidence (%)", 50, 100, 80)
+        
+        with col2:
+            if st.button("📥 Load from Database", type="secondary"):
+                with st.spinner("Loading positive cases from database..."):
+                    success = emergency_classifier.add_positive_cases_from_database(
+                        session, min_confidence=min_confidence
+                    )
+                    if success:
+                        emergency_classifier.build_model()
+                        emergency_classifier.save_model()
+                        st.success("✅ Loaded positive cases from database!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to load positive cases.")
+    
+    with tab4:
+        st.subheader("⚙️ Emergency Classifier Settings")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🎯 Similarity Threshold")
+            current_threshold = emergency_classifier.similarity_threshold
+            new_threshold = st.slider(
+                "Threshold", 
+                0.1, 0.9, 
+                current_threshold, 
+                0.05,
+                help="Higher = more strict (fewer false positives), Lower = more lenient (more false positives)"
+            )
+            
+            if new_threshold != current_threshold:
+                emergency_classifier.similarity_threshold = new_threshold
+                emergency_classifier.save_model()
+                st.success(f"✅ Updated threshold to {new_threshold:.2f}")
+        
+        with col2:
+            st.subheader("🚀 Quick Actions")
+            
+            if st.button("🔄 Rebuild Model"):
+                with st.spinner("Rebuilding model..."):
+                    emergency_classifier.build_model()
+                    emergency_classifier.save_model()
+                    st.success("✅ Model rebuilt!")
+            
+            if st.button("🧹 Clear All Cases"):
+                if st.checkbox("I understand this will delete all positive cases"):
+                    emergency_classifier.positive_cases = []
+                    emergency_classifier.vectorizer_fitted = False
+                    emergency_classifier.save_model()
+                    st.warning("⚠️ All positive cases cleared!")
+                    st.rerun()
+        
+        st.subheader("📋 System Information")
+        st.code(f"""
+Emergency Classifier Status:
+- Model File: classifier/similarity_model.pkl
+- Positive Cases: {len(emergency_classifier.positive_cases)}
+- Vectorizer: {'Fitted' if emergency_classifier.vectorizer_fitted else 'Not Fitted'}
+- Threshold: {emergency_classifier.similarity_threshold}
+- Sources: {', '.join(stats['sources']) if stats['sources'] else 'None'}
+        """)
 
 elif page == "📈 Analytics":
     st.title("📈 Analytics")
