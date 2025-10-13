@@ -9,67 +9,68 @@ def filter_to_essential(input_file, output_file):
     Filter to only the essential fields requested:
     - ID / Publication Number
     - Title
+    - Organization
     - Eligibility criteria
     - CPV code and label
     - Additional CPV codes
     - Submission deadline
     - Publication date
-    - Procurement office
-    - Requesting unit
     - Language of procedure
+    - URL (SIMAP project detail link)
     """
     print(f"Loading data from {input_file}...")
     df = pd.read_csv(input_file)
     print(f"Original shape: {df.shape}")
     
-    # Define the exact columns we need (in order)
+    # Define the exact columns we need (in order) - using standard naming conventions
     essential_columns = {}
+    id_x_col = None
     
     # Find matching columns from the flattened data
     for col in df.columns:
         # Publication Number / ID
         if col == 'base_publicationNumber':
-            essential_columns['ID'] = col
+            essential_columns['tender_id'] = col
         
         # Title (primary)
         if col == 'base_title_primary':
-            essential_columns['Title'] = col
+            essential_columns['title'] = col
+        
+        # Organization (procurement office)
+        if col == 'project-info_procOfficeAddress_name_primary':
+            essential_columns['organization'] = col
         
         # Eligibility criteria (French) - clean version preferred
         if col == 'criteria_qualificationCriteriaNote_fr':
-            essential_columns['Eligibility Criteria (FR)'] = col
+            essential_columns['eligibility_criteria'] = col
         
         # CPV Code
         if col == 'base_cpvCode_code':
-            essential_columns['CPV Code'] = col
+            essential_columns['cpv_code'] = col
         
         # CPV Label (German)
         if col == 'base_cpvCode_label_de':
-            essential_columns['CPV Label (DE)'] = col
+            essential_columns['cpv_label'] = col
         
         # Additional CPV Codes
         if col == 'procurement_additionalCpvCodes':
-            essential_columns['Additional CPV Codes'] = col
+            essential_columns['additional_cpv_codes'] = col
         
         # Submission Deadline
         if col == 'dates_offerDeadline':
-            essential_columns['Tender Submission Deadline'] = col
+            essential_columns['deadline'] = col
         
         # Publication Date
         if col == 'base_publicationDate':
-            essential_columns['Publication Date'] = col
-        
-        # Procurement Office Name (French)
-        if col == 'procOfficeName_fr':
-            essential_columns['Procurement Office (FR)'] = col
-        
-        # Requesting Unit / Procurement Recipient (French)
-        if col == 'project-info_procurementRecipientAddress_name_fr':
-            essential_columns['Requesting Unit (FR)'] = col
+            essential_columns['publication_date'] = col
         
         # Language of Procedure
         if col == 'project-info_offerLanguages':
-            essential_columns['Language of Procedure'] = col
+            essential_columns['languages'] = col
+        
+        # ID for URL construction
+        if col == 'id_x':
+            id_x_col = col
     
     print(f"\n[SUCCESS] Found {len(essential_columns)} essential fields:")
     for display_name, col_name in essential_columns.items():
@@ -80,6 +81,13 @@ def filter_to_essential(input_file, output_file):
     for display_name, col_name in essential_columns.items():
         if col_name in df.columns:
             df_filtered[display_name] = df[col_name]
+    
+    # Add URL field constructed from id_x
+    if id_x_col and id_x_col in df.columns:
+        df_filtered['url'] = df[id_x_col].apply(
+            lambda x: f"https://www.simap.ch/en/project-detail/{x}" if pd.notna(x) else None
+        )
+        print(f"   url: constructed from {id_x_col}")
     
     # Save filtered data
     print(f"\nSaving filtered data to {output_file}...")

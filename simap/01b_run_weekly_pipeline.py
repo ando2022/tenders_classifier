@@ -61,7 +61,7 @@ def main():
     print("\nOutput files:")
     print("   - unlabeled/simap_weekly.csv (raw data)")
     print("   - unlabeled/simap_weekly_flat.csv (flattened data)")
-    print("   - unlabeled/simap_weekly_essential.csv (11 essential fields)")
+    print("   - unlabeled/simap_weekly_essential.csv (11 essential fields with URLs)")
     print("\n")
 
 if __name__ == "__main__":
