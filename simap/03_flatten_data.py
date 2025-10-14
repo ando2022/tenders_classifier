@@ -183,7 +183,7 @@ if __name__ == "__main__":
         output_file = "unlabeled/simap_robust_flat.csv"
     
     print(f"Loading data from {input_file}...")
-    df = pd.read_csv(input_file)
+    df = pd.read_csv(input_file, encoding='utf-8')
     print(f"Original shape: {df.shape}")
     
     # Process with robust recursive flattening

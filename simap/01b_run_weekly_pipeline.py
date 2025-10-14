@@ -7,6 +7,12 @@ import subprocess
 import sys
 import os
 
+# Configure console for UTF-8 output to display umlauts correctly
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except:
+    pass
+
 def run_command(description, command):
     """Run a command and handle errors"""
     print("\n" + "="*80)
@@ -61,7 +67,7 @@ def main():
     print("\nOutput files:")
     print("   - unlabeled/simap_weekly.csv (raw data)")
     print("   - unlabeled/simap_weekly_flat.csv (flattened data)")
-    print("   - unlabeled/simap_weekly_essential.csv (11 essential fields with URLs)")
+    print("   - unlabeled/simap_weekly_essential.csv (14 essential fields with dates & URLs)")
     print("\n")
 
 if __name__ == "__main__":

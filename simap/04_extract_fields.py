@@ -3,6 +3,7 @@ Filter SIMAP data to keep only essential fields specified by user
 """
 
 import pandas as pd
+import re
 
 def filter_to_essential(input_file, output_file):
     """
@@ -13,13 +14,15 @@ def filter_to_essential(input_file, output_file):
     - Eligibility criteria
     - CPV code and label
     - Additional CPV codes
-    - Submission deadline
+    - Submission deadline (offerDeadline)
     - Publication date
+    - Public offer opening date
     - Language of procedure
+    - Description (procurement order description)
     - URL (SIMAP project detail link)
     """
     print(f"Loading data from {input_file}...")
-    df = pd.read_csv(input_file)
+    df = pd.read_csv(input_file, encoding='utf-8')
     print(f"Original shape: {df.shape}")
     
     # Define the exact columns we need (in order) - using standard naming conventions
@@ -56,17 +59,25 @@ def filter_to_essential(input_file, output_file):
         if col == 'procurement_additionalCpvCodes':
             essential_columns['additional_cpv_codes'] = col
         
-        # Submission Deadline
+        # Submission Deadline (offerDeadline)
         if col == 'dates_offerDeadline':
-            essential_columns['deadline'] = col
+            essential_columns['offer_deadline'] = col
         
         # Publication Date
         if col == 'base_publicationDate':
             essential_columns['publication_date'] = col
         
+        # Public Offer Opening Date
+        if col == 'dates_publicOfferOpening':
+            essential_columns['public_offer_opening_date'] = col
+        
         # Language of Procedure
         if col == 'project-info_offerLanguages':
             essential_columns['languages'] = col
+        
+        # Description (procurement order description)
+        if col == 'procurement_orderDescription_primary':
+            essential_columns['description'] = col
         
         # ID for URL construction
         if col == 'id_x':
@@ -89,7 +100,7 @@ def filter_to_essential(input_file, output_file):
         )
         print(f"   url: constructed from {id_x_col}")
     
-    # Save filtered data
+    # Save filtered data (UTF-8 encoding is already correct from API)
     print(f"\nSaving filtered data to {output_file}...")
     df_filtered.to_csv(output_file, index=False, encoding='utf-8')
     
@@ -121,4 +132,3 @@ if __name__ == "__main__":
         output_file = "unlabeled/simap_essential_clean.csv"
     
     df_filtered = filter_to_essential(input_file, output_file)
-

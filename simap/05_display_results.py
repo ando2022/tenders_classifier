@@ -19,10 +19,17 @@ else:
         sys.exit(1)
 
 print(f"Reading: {input_file}\n")
-df = pd.read_csv(input_file)
+df = pd.read_csv(input_file, encoding='utf-8')
+
+# Configure console for UTF-8 output to display umlauts correctly
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except:
+    pass  # If reconfigure fails, continue anyway
 
 print("="*80)
-print("ESSENTIAL SIMAP DATA - 11 KEY FIELDS")
+print("ESSENTIAL SIMAP DATA - 14 KEY FIELDS")
 print("="*80 + "\n")
 print(f"\nTotal tenders: {len(df)}\n")
 
@@ -34,9 +41,14 @@ try:
         print(f"   Organization: {str(df.iloc[i]['organization'])[:70]}{'...' if pd.notna(df.iloc[i]['organization']) and len(str(df.iloc[i]['organization'])) > 70 else ''}")
         print(f"   CPV: {df.iloc[i]['cpv_code']} - {df.iloc[i]['cpv_label']}")
         print(f"   Additional CPVs: {df.iloc[i]['additional_cpv_codes']}")
-        print(f"   Deadline: {df.iloc[i]['deadline']}")
-        print(f"   Publication: {df.iloc[i]['publication_date']}")
+        print(f"   Offer Deadline: {df.iloc[i]['offer_deadline']}")
+        print(f"   Publication Date: {df.iloc[i]['publication_date']}")
+        if 'public_offer_opening_date' in df.columns:
+            print(f"   Public Offer Opening: {df.iloc[i]['public_offer_opening_date']}")
         print(f"   Languages: {df.iloc[i]['languages']}")
+        if 'description' in df.columns:
+            description = str(df.iloc[i]['description'])
+            print(f"   Description: {description[:60]}{'...' if len(description) > 60 else ''}")
         eligibility = str(df.iloc[i]['eligibility_criteria'])
         print(f"   Eligibility: {eligibility[:60]}{'...' if len(eligibility) > 60 else ''}")
         print()
