@@ -11,9 +11,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from cpv_config import OPTIMIZED_CPV_CODES
 
 # EU TENDER FETCHER - USING VERIFIED OPTIMIZED CPV CODES
-# Uses optimized CPV codes that are verified to work in current TED data (2025)
-# 13 out of 19 optimized CPVs found in today's data (68.4% success rate)
-# Using the working subset of optimized CPV codes from SIMAP analysis
+# Fetches EU tenders with optimized CPV codes and language filtering (DE, FR, EN, IT)
+# Uses shared CPV configuration for consistency across scrapers
 
 API_URL = "https://api.ted.europa.eu/v3/notices/search"
 headers = {
@@ -21,9 +20,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# OPTIMIZED CPV codes - VERIFIED to work in current TED data (2025)
-# 13 out of 19 optimized CPVs are found in today's TED data (68.4% success rate)
-# Using the working subset of optimized CPV codes from shared config
+# Use optimized CPV codes from shared configuration
 cpv_codes = OPTIMIZED_CPV_CODES
 
 # Query for business opportunities (competition notices - subtype 16)
@@ -53,7 +50,7 @@ json_payload = {
         "submission-language",
         "links"
     ],
-    "limit": 50,  # Using optimized CPV set for more focused results
+    "limit": 50,
     "scope": "ACTIVE",
     "paginationMode": "ITERATION"
 }
@@ -103,51 +100,30 @@ while True:
 
 print(f"\nTotal notices collected across all pages: {len(all_notices)}")
 
-# Show what countries we're getting
-countries = []
-submission_langs = []
+# Filter for tenders with target languages (DE, FR, EN, IT)
+target_languages = ['DEU', 'FRA', 'ENG', 'ITA']
+filtered_notices = []
+
 for notice in all_notices:
-    buyer_country = notice.get('buyer-country', [])
     submission_lang = notice.get('submission-language', [])
     
-    if isinstance(buyer_country, list):
-        countries.extend(buyer_country)
-    if isinstance(submission_lang, list):
-        submission_langs.extend(submission_lang)
+    # Check if submission language includes target languages
+    if isinstance(submission_lang, list) and any(lang in target_languages for lang in submission_lang):
+        filtered_notices.append(notice)
 
-print(f"Countries found: {set(countries)}")
-print(f"Submission languages found: {set(submission_langs)}")
+print(f"Tenders with target languages (DE, FR, EN, IT): {len(filtered_notices)}")
 
-# Filter for Swiss tenders (CH) and tenders with Swiss submission languages
-swiss_notices = []
-for notice in all_notices:
-    buyer_country = notice.get('buyer-country', [])
-    submission_lang = notice.get('submission-language', [])
-    
-    # Check if buyer country is Switzerland (CH) or if submission language includes German/French/Italian
-    is_swiss = False
-    if isinstance(buyer_country, list) and 'CH' in buyer_country:
-        is_swiss = True
-    elif isinstance(submission_lang, list) and any(lang in ['DEU', 'FRA', 'ITA', 'ENG'] for lang in submission_lang):
-        # Additional check: if submission language includes Swiss languages, consider it
-        is_swiss = True
-    
-    if is_swiss:
-        swiss_notices.append(notice)
-
-print(f"Swiss tenders found: {len(swiss_notices)}")
-
-# If no Swiss tenders, save all tenders for analysis
-if not swiss_notices:
-    print("No Swiss tenders found. Saving all tenders for analysis.")
-    swiss_notices = all_notices
+# If no filtered tenders, save all tenders for analysis
+if not filtered_notices:
+    print("No tenders with target languages found. Saving all tenders for analysis.")
+    filtered_notices = all_notices
 
 # Convert notices to DataFrame and save as CSV
-if swiss_notices:
+if filtered_notices:
     # Flatten the notices data for CSV output
     flattened_notices = []
     
-    for notice in swiss_notices:
+    for notice in filtered_notices:
         # Extract publication number for URL construction
         pub_number = notice.get('publication-number', '')
         ted_url = f"https://ted.europa.eu/en/notice/-/detail/{pub_number}" if pub_number else ''
@@ -193,8 +169,9 @@ if swiss_notices:
             'publication_date': notice.get('publication-date', ''),
             'title': notice.get('title-part', {}).get('text', ''),
             'buyer_name': buyer_name,
+            'organization': buyer_name,  # Map buyer_name to organization for consistency
             'description': description_proc,
-            'classification_cpv': ', '.join(list(set(notice.get('classification-cpv', [])))),
+            'cpv_code': ', '.join(list(set(notice.get('classification-cpv', [])))),
             'title_language': notice.get('title-part', {}).get('language', ''),
             'procedure_type': notice.get('procedure-type', ''),
             'contract_nature': notice.get('contract-nature', ''),
@@ -203,7 +180,7 @@ if swiss_notices:
             'notice_subtype': notice.get('notice-subtype', ''),
             'title_proc': title_proc,
             'language_submission': ', '.join(notice.get('submission-language', [])),
-            'ted_url': ted_url,
+            'url': ted_url,
             'xml_url': notice.get('links', {}).get('xml', {}).get('MUL', ''),
             'pdf_url': notice.get('links', {}).get('pdf', {}).get('ENG', ''),
             'fetched_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -213,10 +190,13 @@ if swiss_notices:
     # Create DataFrame and save to CSV
     df = pd.DataFrame(flattened_notices)
     
-    # Generate filename with timestamp and save in current directory
+    # Generate filename with timestamp and save in scraper/eu-tender directory
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     
-    filename = f"swiss_tenders_daily_{timestamp}.csv"
+    # Ensure the directory exists
+    os.makedirs("scraper/eu-tender", exist_ok=True)
+    
+    filename = f"scraper/eu-tender/eu_tenders_daily_{timestamp}.csv"
     
     # Save to CSV
     df.to_csv(filename, index=False, encoding='utf-8')
