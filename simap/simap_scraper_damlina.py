@@ -35,6 +35,7 @@ BASE_PARAMS = {
     "pageSize": 100,
     "newestPublicationFrom": "2025-10-01",
     "newestPublicationUntil": "2025-10-15",
+    "newestPubTypes": ["tender"],
     # Date window will be injected dynamically in main() for the last 7 days
 }
 
@@ -411,12 +412,44 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
         office_ld = as_lang_dict(office_obj)
         proc_office_name = clean_text_chars(pick_lang_by_creation_language(office_ld, base_creation_language))
 
+        # Extract offer languages and normalize to comma-separated string
+        offer_langs_val = (
+            row.get("project-info.offerLanguages")
+            or row.get("project-info_offerLanguages")
+            or row.get("offerLanguages")
+            or row.get("detail.offerLanguages")
+        )
+        submission_language = ""
+        if isinstance(offer_langs_val, list):
+            norm_items = []
+            for it in offer_langs_val:
+                if isinstance(it, str):
+                    norm_items.append(it)
+                elif isinstance(it, dict):
+                    code = it.get("code") or it.get("id") or it.get("lang")
+                    label = it.get("label") or it.get("name")
+                    norm_items.append(code or label or "")
+            submission_language = ", ".join([clean_text_chars(x) for x in norm_items if x])
+        elif isinstance(offer_langs_val, dict):
+            vals = []
+            for k in ("codes", "languages", "langs"):
+                v = offer_langs_val.get(k)
+                if isinstance(v, list):
+                    vals = v
+                    break
+            if not vals:
+                vals = [v for v in offer_langs_val.values() if isinstance(v, str)]
+            submission_language = ", ".join([clean_text_chars(x) for x in vals if x])
+        elif isinstance(offer_langs_val, str):
+            submission_language = clean_text_chars(offer_langs_val)
+
         # Construct URL from id_x (same as archive)
         url = f"https://www.simap.ch/en/project-detail/{id_x_val}" if id_x_val else ""
 
         curated_rows.append({
             "organization": proc_office_name,
             "languages": base_creation_language,
+            "submission_language": submission_language,
             "deadline": offer_deadline,
             "cpv_code": cpv_code,
             "cpv_label": cpv_label,
@@ -427,10 +460,11 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
             "Description": order_one,
         })
 
-    # Ensure requested column order exactly as specified - 10 columns with new names
+    # Ensure requested column order exactly as specified - 11 columns with submission_language
     final_cols = [
         "organization",
         "languages",
+        "submission_language",
         "deadline",
         "cpv_code",
         "cpv_label",
