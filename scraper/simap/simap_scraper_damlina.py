@@ -10,6 +10,7 @@ SIMAP scraper (script version) exported from Simap_scraper_damlina.ipynb
 
 import datetime
 import json
+import os
 import sys
 import time
 from typing import Dict, Any, List, Tuple, Optional
@@ -18,6 +19,10 @@ import re
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+# Import CPV configuration
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from cpv_config import OPTIMIZED_CPV_CODES
 
 
 BASE_URL = "https://prod.simap.ch/api/publications/v2/project/project-search"
@@ -28,10 +33,7 @@ BASE_PARAMS = {
     "processTypes": ["open"],              # Offenes Verfahren
     "pubTypes": ["call_for_bids"],        # Ausschreibung
     "projectSubTypes": ["service"],       # Dienstleistung
-    "cpvCodes": [
-        "72000000","79300000","73100000","79311400","72314000",
-        "79416000","72320000","98300000","79310000","79000000","79311410"
-    ],
+    "cpvCodes": OPTIMIZED_CPV_CODES,
     "pageSize": 100,
     "newestPublicationFrom": "2025-10-01",
     "newestPublicationUntil": "2025-10-15",
@@ -481,7 +483,11 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
     curated_df = curated_df[final_cols]
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out = f"simap_export_{ts}.csv"
+    out = f"scraper/simap/simap_export_{ts}.csv"
+    
+    # Ensure the directory exists
+    os.makedirs("scraper/simap", exist_ok=True)
+    
     curated_df.to_csv(out, index=False, encoding="utf-8-sig")
     print(f"Saved {len(curated_df)} rows to {out}")
 
@@ -516,7 +522,11 @@ def save_csv_without_pandas(projects: List[Dict[str, Any]], details: List[Dict[s
     headers = sorted(headers)
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out = f"simap_results_{ts}.csv"
+    out = f"scraper/simap/simap_results_{ts}.csv"
+    
+    # Ensure the directory exists
+    os.makedirs("scraper/simap", exist_ok=True)
+    
     with open(out, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=headers)
         w.writeheader()

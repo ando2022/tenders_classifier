@@ -3,7 +3,12 @@ import json
 import time
 import pandas as pd
 import os
+import sys
 from datetime import datetime
+
+# Import CPV configuration
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from cpv_config import OPTIMIZED_CPV_CODES
 
 # EU TENDER FETCHER - USING VERIFIED OPTIMIZED CPV CODES
 # Uses optimized CPV codes that are verified to work in current TED data (2025)
@@ -18,11 +23,8 @@ headers = {
 
 # OPTIMIZED CPV codes - VERIFIED to work in current TED data (2025)
 # 13 out of 19 optimized CPVs are found in today's TED data (68.4% success rate)
-# Using the working subset of optimized CPV codes
-cpv_codes = [
-    "71311200", "72322000", "73100000", "79300000", "79310000", "79311000", 
-    "79311200", "79311400", "79311410", "79320000", "79416000", "79419000", "98300000"
-]
+# Using the working subset of optimized CPV codes from shared config
+cpv_codes = OPTIMIZED_CPV_CODES
 
 # Query for business opportunities (competition notices - subtype 16)
 cpv_conditions = " OR ".join([f'classification-cpv = "{code}"' for code in cpv_codes])
