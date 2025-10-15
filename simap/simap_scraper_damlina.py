@@ -33,9 +33,9 @@ BASE_PARAMS = {
         "79416000","72320000","98300000","79310000","79000000","79311410"
     ],
     "pageSize": 100,
-    # Optional window
-    # "pubDateFrom": "2025-01-01",
-    # "pubDateTo":   "2025-12-31",
+    "newestPublicationFrom": "2025-10-01",
+    "newestPublicationUntil": "2025-10-15",
+    # Date window will be injected dynamically in main() for the last 7 days
 }
 
 
@@ -142,7 +142,7 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
         how="left",
     )
 
-    # ---------- Curate only requested fields ----------
+    # ---------- Curate only requested fields (per user spec) ----------
     def strip_html(val):
         try:
             from bs4 import BeautifulSoup
@@ -160,6 +160,47 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
                 if v:
                     return v
         return ld
+
+    def pick_lang_by_creation_language(ld, creation_lang):
+        """Pick language variant based on base.creationLanguage"""
+        if not isinstance(ld, dict) or not creation_lang:
+            return pick_lang(ld)  # fallback to original logic
+        
+        # Map creation language to our language keys
+        lang_map = {
+            "de": "de", "german": "de", "deutsch": "de",
+            "fr": "fr", "french": "fr", "français": "fr", "francais": "fr",
+            "en": "en", "english": "en", "englisch": "en",
+            "it": "it", "italian": "it", "italienisch": "it", "italiano": "it"
+        }
+        
+        target_key = lang_map.get(creation_lang.lower())
+        if target_key and target_key in ld:
+            return ld[target_key]
+        
+        # Fallback to original priority if creation language not found
+        return pick_lang(ld)
+
+    def list_langs(ld):
+        if isinstance(ld, dict):
+            langs = [k for k in ("de","fr","it","en") if ld.get(k)]
+            if langs:
+                return ", ".join(langs)
+        return ""
+
+    def as_lang_dict(val):
+        # normalize to {de/en/fr/it: str}
+        if isinstance(val, dict):
+            out = {}
+            for k in ("de","en","fr","it"):
+                v = val.get(k)
+                if isinstance(v, str) and v.strip():
+                    out[k] = strip_html(v)
+            return out
+        elif isinstance(val, str):
+            # unknown language -> put under 'de' by default to keep a place
+            return {"de": strip_html(val)}
+        return {}
 
     def extract_order_description(proc):
         if isinstance(proc, dict):
@@ -229,34 +270,153 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
             walk(proc)
         return amount, currency
 
+    def extract_eligibility(criteria_obj):
+        # criteria may be list or dict; collect names/texts
+        texts = []
+        def walk(obj):
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    if isinstance(v, (dict, list)):
+                        walk(v)
+                    else:
+                        nk = k.lower()
+                        if any(t in nk for t in ("eligibility","requirement","qualificat","criterion","criteria","text","description","nachweis")):
+                            if isinstance(v, str) and v.strip():
+                                texts.append(strip_html(v))
+            elif isinstance(obj, list):
+                for it in obj:
+                    walk(it)
+        walk(criteria_obj)
+        return "; ".join(dict.fromkeys([t for t in texts if t]))[:4000]
+
+    def extract_cpv(row_dict):
+        # Try to find a code and label in common places (lots, procurement)
+        code = None
+        label = None
+        def walk(obj):
+            nonlocal code, label
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    lk = k.lower()
+                    if code is None and ("cpv" in lk and ("code" in lk or lk == "cpv")):
+                        if isinstance(v, str):
+                            code = v
+                    if label is None and ("cpv" in lk and "label" in lk):
+                        if isinstance(v, str):
+                            label = v
+                    walk(v)
+            elif isinstance(obj, list):
+                for it in obj:
+                    walk(it)
+        walk({"lots": row_dict.get("lots")})
+        walk({"procurement": row_dict.get("procurement")})
+        return code, label
+
+    def clean_text_chars(s):
+        if not isinstance(s, str):
+            return s
+        # Remove control chars except tab/newline; normalize spaces
+        s = re.sub(r"[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]", "", s)
+        s = re.sub(r"\s+", " ", s).strip()
+        return s
+
     curated_rows = []
     for _, row in merged.iterrows():
-        order_desc = extract_order_description(row.get("procurement"))
-        ttitle = extract_title(row.get("title"))
-        buyer = row.get("procOfficeName")
-        # dates may exist in detail payload
-        dd = row.get("dates")
-        deadline_sub = extract_deadline_submission(dd)
-        deadline_add = extract_deadline_additional_info(dd)
-        val, cur = extract_procurement_value(row.get("procurement"))
+        # id_x comes from merged id_x (left id)
+        id_x_val = row.get("id_x") if "id_x" in merged.columns else row.get("id")
+        
+        # Extract title from nested structure - try multiple paths
+        title_obj = row.get("title") or row.get("title.de") or row.get("title.en") or row.get("title.fr") or row.get("title.it")
+        if not title_obj and "title" in merged.columns:
+            title_obj = row.get("title")
+        
+        # Extract title using creation language
+        title_ld = as_lang_dict(title_obj)
+        title_one = clean_text_chars(pick_lang_by_creation_language(title_ld, row.get("base.creationLanguage") or row.get("base.creationLanguage")))
+
+        # Publication identifiers/dates
+        publication_id = row.get("publicationId") or row.get("publication_id")
+        publication_date = row.get("publicationDate")
+
+        # Base creation language
+        base_creation_language = (row.get("base.creationLanguage")
+                                  if "base.creationLanguage" in merged.columns else
+                                  (row.get("base") or {}).get("creationLanguage") if isinstance(row.get("base"), dict) else "")
+        base_creation_language = clean_text_chars(base_creation_language or "")
+
+        # Extract order description from nested procurement structure
+        procurement_obj = row.get("procurement")
+        order_desc_obj = None
+        if isinstance(procurement_obj, dict):
+            order_desc_obj = procurement_obj.get("orderDescription")
+        elif isinstance(procurement_obj, str):
+            order_desc_obj = procurement_obj
+        
+        # Try alternative paths for order description
+        if not order_desc_obj:
+            order_desc_obj = (row.get("procurement.orderDescription") or 
+                            row.get("procurement.orderDescription.de") or 
+                            row.get("procurement.orderDescription.en") or 
+                            row.get("procurement.orderDescription.fr") or 
+                            row.get("procurement.orderDescription.it"))
+        
+        order_ld = as_lang_dict(order_desc_obj)
+        order_one = clean_text_chars(pick_lang_by_creation_language(order_ld, base_creation_language))
+
+        # Extract deadline using the exact field names from archive
+        offer_deadline = (row.get("dates.offerDeadline") or 
+                         row.get("dates_offerDeadline") or 
+                         row.get("offerDeadline"))
+        offer_deadline = clean_text_chars(offer_deadline or "")
+
+        # CPV - try multiple extraction paths
+        cpv_code, cpv_label = extract_cpv(row)
+        if not cpv_code:
+            cpv_code = (row.get("procurement.cpvCode.code") or 
+                       row.get("procurement.cpvCode") or 
+                       row.get("cpvCode.code") or 
+                       row.get("cpvCode"))
+        if not cpv_label:
+            cpv_label = (row.get("procurement.cpvCode.label") or 
+                        row.get("procurement.cpvCode.label.de") or 
+                        row.get("cpvCode.label") or 
+                        row.get("cpvCode.label.de"))
+
+        # Construct URL from id_x (same as archive)
+        url = f"https://www.simap.ch/en/project-detail/{id_x_val}" if id_x_val else ""
 
         curated_rows.append({
-            "id": row.get("id"),
-            "project_id": row.get("project_id"),
-            "publication_date": row.get("publicationDate"),
-            "buyer_official_name": buyer,
-            "deadline_submission": deadline_sub,
-            "deadline_additional_information": deadline_add,
-            "procurement_value": val,
-            "procurement_currency": cur,
-            "title": ttitle,
-            "order_description": order_desc,
+            "title": title_one,
+            "publication_id": publication_id,
+            "publicationDate": publication_date,
+            "base.creationLanguage": base_creation_language,
+            "procurement.orderDescription": order_one,
+            "procurement.cpvCode.code": cpv_code,
+            "procurement.cpvCode.label": cpv_label,
+            "dates.offerDeadline": offer_deadline,
+            "url": url,
         })
 
+    # Ensure requested column order exactly as specified - 9 columns (removed id_x)
+    final_cols = [
+        "title",
+        "publication_id",
+        "publicationDate",
+        "base.creationLanguage",
+        "procurement.orderDescription",
+        "procurement.cpvCode.code",
+        "procurement.cpvCode.label",
+        "dates.offerDeadline",
+        "url",
+    ]
     curated_df = pd.DataFrame(curated_rows)
+    for c in final_cols:
+        if c not in curated_df.columns:
+            curated_df[c] = ""
+    curated_df = curated_df[final_cols]
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out = f"simap_curated_{ts}.csv"
+    out = f"simap_export_{ts}.csv"
     curated_df.to_csv(out, index=False, encoding="utf-8-sig")
     print(f"✅ Saved {len(curated_df)} rows to {out}")
 
@@ -304,8 +464,15 @@ def save_csv_without_pandas(projects: List[Dict[str, Any]], details: List[Dict[s
 
 def main():
     session = make_session()
-    print("Fetching SIMAP projects …")
-    projects = fetch_all_projects(session, BASE_PARAMS)
+    # Restrict to last 7 days (inclusive)
+    today = datetime.date.today()
+    start = today - datetime.timedelta(days=7)
+    params = dict(BASE_PARAMS)
+    params["pubDateFrom"] = start.strftime("%Y-%m-%d")
+    params["pubDateTo"] = today.strftime("%Y-%m-%d")
+
+    print(f"Fetching SIMAP projects for window {params['pubDateFrom']} .. {params['pubDateTo']} …")
+    projects = fetch_all_projects(session, params)
     print(f"Got {len(projects)} project rows")
 
     print("Fetching details … this can take a few minutes …")
