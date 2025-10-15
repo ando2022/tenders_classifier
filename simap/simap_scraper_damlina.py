@@ -321,7 +321,7 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
         return s
 
     curated_rows = []
-    for _, row in merged.iterrows():
+    for i, (_, row) in enumerate(merged.iterrows()):
         # id_x comes from merged id_x (left id)
         id_x_val = row.get("id_x") if "id_x" in merged.columns else row.get("id")
         
@@ -382,32 +382,63 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
                         row.get("cpvCode.label") or 
                         row.get("cpvCode.label.de"))
 
+        # Extract procOfficeName from nested structure - try multiple paths
+        office_obj = row.get("procOfficeName")
+        if not office_obj:
+            # Try alternative paths for organization name - the actual data is in project-info.procOfficeAddress.name
+            office_obj = (row.get("project-info.procOfficeAddress.name") or 
+                         row.get("project-info_procOfficeAddress_name") or
+                         row.get("procOfficeAddress.name") or
+                         row.get("procOfficeAddress_name") or
+                         row.get("organization") or
+                         row.get("procurementOfficeName"))
+        
+        # If still not found, try to construct from individual language fields
+        if not office_obj:
+            office_de = row.get("project-info.procOfficeAddress.name.de", "")
+            office_en = row.get("project-info.procOfficeAddress.name.en", "")
+            office_fr = row.get("project-info.procOfficeAddress.name.fr", "")
+            office_it = row.get("project-info.procOfficeAddress.name.it", "")
+            if any([office_de, office_en, office_fr, office_it]):
+                office_obj = {
+                    "de": office_de,
+                    "en": office_en,
+                    "fr": office_fr,
+                    "it": office_it
+                }
+        
+        # Extract organization name using creation language
+        office_ld = as_lang_dict(office_obj)
+        proc_office_name = clean_text_chars(pick_lang_by_creation_language(office_ld, base_creation_language))
+
         # Construct URL from id_x (same as archive)
         url = f"https://www.simap.ch/en/project-detail/{id_x_val}" if id_x_val else ""
 
         curated_rows.append({
+            "organization": proc_office_name,
+            "languages": base_creation_language,
+            "deadline": offer_deadline,
+            "cpv_code": cpv_code,
+            "cpv_label": cpv_label,
             "title": title_one,
             "publication_id": publication_id,
-            "publicationDate": publication_date,
-            "base.creationLanguage": base_creation_language,
-            "procurement.orderDescription": order_one,
-            "procurement.cpvCode.code": cpv_code,
-            "procurement.cpvCode.label": cpv_label,
-            "dates.offerDeadline": offer_deadline,
+            "publication_date": publication_date,
             "url": url,
+            "Description": order_one,
         })
 
-    # Ensure requested column order exactly as specified - 9 columns (removed id_x)
+    # Ensure requested column order exactly as specified - 10 columns with new names
     final_cols = [
+        "organization",
+        "languages",
+        "deadline",
+        "cpv_code",
+        "cpv_label",
         "title",
         "publication_id",
-        "publicationDate",
-        "base.creationLanguage",
-        "procurement.orderDescription",
-        "procurement.cpvCode.code",
-        "procurement.cpvCode.label",
-        "dates.offerDeadline",
+        "publication_date",
         "url",
+        "Description",
     ]
     curated_df = pd.DataFrame(curated_rows)
     for c in final_cols:
@@ -418,7 +449,7 @@ def save_csv_with_pandas(projects: List[Dict[str, Any]], details: List[Dict[str,
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     out = f"simap_export_{ts}.csv"
     curated_df.to_csv(out, index=False, encoding="utf-8-sig")
-    print(f"✅ Saved {len(curated_df)} rows to {out}")
+    print(f"Saved {len(curated_df)} rows to {out}")
 
 
 def save_csv_without_pandas(projects: List[Dict[str, Any]], details: List[Dict[str, Any]]):
@@ -459,7 +490,7 @@ def save_csv_without_pandas(projects: List[Dict[str, Any]], details: List[Dict[s
             # Serialize non-scalars to JSON strings for CSV safety
             safe = {k: (json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v) for k, v in r.items()}
             w.writerow(safe)
-    print(f"✅ Saved {len(merged)} rows to {out}")
+        print(f"Saved {len(merged)} rows to {out}")
 
 
 def main():
