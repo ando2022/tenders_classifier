@@ -32,76 +32,111 @@ from webdriver_manager.chrome import ChromeDriverManager
 START_URL = "https://www.evergabe-online.de/search.html?4"
 DOWNLOAD_DIR = "downloads"     # PDFs will be saved here
 HEADLESS = True                # set to False to watch the browser
-MAX_PAGES = None               # set an int (e.g., 5) for quick testing
+MAX_PAGES = 3                  # set an int (e.g., 5) for quick testing
 PER_PAGE_DELAY = 0.15          # seconds; be polite but fast
 
-# -------- Keywords (DE/FR/IT/EN) --------
-RAW_INCLUDE = [
-    # Study / Studie
-    "study","studie","étude","etude","studio",
-    # Analysis / Analyse
-    "analysis","analyse","analisi",
-    # Economy / Wirtschaft / Ökonomie
-    "economy","economics","wirtschaft","ökonomie","economie","economia",
-    # Benchmarking
-    "benchmark","benchmarking",
-    # Wirtschaftsberatung / consulting
-    "wirtschaftsberatung","consulting","conseil","consulenza",
-    # CPV & categories
-    "72000000","79300000",
-    "it-dienste",
-    "beratung, software-entwicklung, internet und hilfestellung",
-    "markt- und wirtschaftsforschung","umfragen und statistiken",
-    # Dienstleistung / services
-    "dienstleistung","service","prestation","prestazione",
-    # Ausschreibung / tender
-    "ausschreibung","appel d'offres","appels d'offres","gara","procurement",
-    # Offenes Verfahren / open procedure
-    "offenes verfahren","procédure ouverte","procedure ouverte","procedura aperta",
-    # BKS / Bundesamt für Statistik / OFS
-    "bks","bundesamt für statistik","office fédéral de la statistique",
-    "office federal de la statistique","ufficio federale di statistica",
-    "federal statistical office","ofs","bfs",
-    # SECO
-    "seco","staatssekretariat für wirtschaft",
-    "secrétariat d'état à l'économie","secretariat d'etat a l'economie",
-    "segretariato di stato dell'economia",
-    # Cantons / regions
-    "kanton zürich","kanton zuerich","canton de zurich","cantone zurigo",
-    "kanton luzern","canton de lucerne","cantone lucerna",
-    "kanton","canton","cantone",
-    "region","regionen","région","regione",
-    # Bundesamt für.. (generic)
-    "bundesamt für","bundesamt fuer",
-    # BBL
-    "bundesamt für bauten und logistik","bundesamt fuer bauten und logistik","bbl",
-    # Index
-    "index","verbraucherindex","price index","indice des prix","indice dei prezzi",
-    # Wirtschaftsforschung
-    "wirtschaftsforschung","economic research","recherche économique",
-    "recherche economique","ricerca economica",
-]
-
-RAW_EXCLUDE = [
-    "construction","bau","bâtiment","batiment","costruzioni",
-    "health care","gesundheit","santé","sante","sanità","sanita",
-    "transport","verkehr","transports","trasporti",
-    "mobility","mobilität","mobilite","mobilité","mobilita",
-    "sport",
-    "culture","kultur","cultura",
-    "street","strasse","straße","rue","strada",
-    "infrastructure","infrastruktur","infrastruttura",
-    "process","prozess","processus","processo",
-    "it","informatik","informatique","informatica",
-]
-
+# -------- Load keywords from cpv_config.py --------
 def _norm(s: str) -> str:
     """Lowercase, strip accents, collapse whitespace."""
     s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
     return re.sub(r"\s+", " ", s.strip().lower())
 
-INCLUDE = {_norm(k) for k in RAW_INCLUDE if k.strip()}
-EXCLUDE = {_norm(k) for k in RAW_EXCLUDE if k.strip()}
+def translate_column_name(german_name):
+    """Translate German column names to English"""
+    translations = {
+        "Bezeichnung": "Title",
+        "Geschäftszeichen": "Reference_Number", 
+        "Vergabestelle": "Contracting_Authority",
+        "Ort der Leistung": "Place_of_Performance",
+        "Veröffentlichungsdatum": "Publication_Date",
+        "Bewerbungsfrist": "Application_Deadline",
+        "Letzte Veröffentlichung": "Last_Publication",
+        "Zuletzt veröffentlicht": "Last_Published",
+        "Verfahrensart": "Procedure_Type",
+        "Auftragsart": "Contract_Type",
+        "Geschätzte Kosten": "Estimated_Costs",
+        "CPV-Code": "CPV_Code",
+        "NUTS-Code": "NUTS_Code",
+        "Zusätzliche Informationen": "Additional_Information",
+        "Kurzbeschreibung": "Short_Description",
+        "Beschreibung": "Description",
+        "Leistungsbeschreibung": "Service_Description",
+        "Ausschreibungsunterlagen": "Tender_Documents",
+        "Ansprechpartner": "Contact_Person",
+        "Telefon": "Phone",
+        "E-Mail": "Email",
+        "Internet": "Website",
+        "Fax": "Fax",
+        "Postleitzahl": "Postal_Code",
+        "Ort": "City",
+        "Land": "Country",
+        "Strasse": "Street",
+        "Hausnummer": "House_Number",
+        "Adresse": "Address",
+        "Name": "Name",
+        "Firma": "Company",
+        "Organisation": "Organization",
+        "Institution": "Institution",
+        "Behörde": "Authority",
+        "Ministerium": "Ministry",
+        "Amt": "Office",
+        "Bundesamt": "Federal_Office",
+        "Kanton": "Canton",
+        "Gemeinde": "Municipality",
+        "Stadt": "City",
+        "Region": "Region",
+        "Bereich": "Area",
+        "Abteilung": "Department",
+        "Referat": "Section",
+        "Sachgebiet": "Subject_Area",
+        "Fachbereich": "Field",
+        "Bereich": "Area",
+        "Sparte": "Division",
+        "Zweig": "Branch",
+        "Fachgebiet": "Specialty",
+        "Tätigkeitsbereich": "Activity_Area",
+        "Aufgabenbereich": "Task_Area",
+        "Zuständigkeitsbereich": "Responsibility_Area",
+        "Einzugsgebiet": "Catchment_Area",
+        "Tätigkeitsfeld": "Field_of_Activity",
+        "Arbeitsgebiet": "Work_Area",
+        "Betätigungsfeld": "Field_of_Operation",
+        "Geschäftsbereich": "Business_Area",
+        "Fachbereich": "Department",
+        "Ressort": "Ministry",
+        "Referat": "Section",
+        "Abteilung": "Department",
+        "Bereich": "Area",
+        "Sparte": "Division",
+        "Zweig": "Branch",
+        "Fachgebiet": "Specialty",
+        "Tätigkeitsbereich": "Activity_Area",
+        "Aufgabenbereich": "Task_Area",
+        "Zuständigkeitsbereich": "Responsibility_Area",
+        "Einzugsgebiet": "Catchment_Area",
+        "Tätigkeitsfeld": "Field_of_Activity",
+        "Arbeitsgebiet": "Work_Area",
+        "Betätigungsfeld": "Field_of_Operation",
+        "Geschäftsbereich": "Business_Area"
+    }
+    return translations.get(german_name, german_name)
+
+# Load keywords from cpv_config.py
+try:
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from scraper.cpv_config import EVERGABE_KEYWORDS
+    
+    # Filter out CPV codes (keep only text-based keywords)
+    CPV_PATTERN_FILTER = re.compile(r'^\d{8}(?:-\d)?$')
+    FILTERED_KEYWORDS = [k for k in EVERGABE_KEYWORDS if not CPV_PATTERN_FILTER.match(str(k).strip())]
+    INCLUDE = {_norm(k) for k in FILTERED_KEYWORDS if str(k).strip()}
+    EXCLUDE = set()  # No exclusion filtering
+    print(f"🔎 Loaded {len(INCLUDE)} keywords from cpv_config.py")
+except Exception as e:
+    print(f"⚠️  Could not import EVERGABE_KEYWORDS: {e}")
+    INCLUDE = set()
+    EXCLUDE = set()
 
 # -------- Selenium setup --------
 def make_driver(headless=True):
@@ -213,7 +248,10 @@ def get_table_headers(driver):
         first_row = table.find_element(By.CSS_SELECTOR, "tbody tr")
         n = len(first_row.find_elements(By.CSS_SELECTOR, "td"))
         headers = [f"col_{i+1}" for i in range(n)]
-    return unique_headers([h.strip() for h in headers])
+    
+    # Translate German headers to English
+    translated_headers = [translate_column_name(h.strip()) for h in headers]
+    return unique_headers(translated_headers)
 
 def row_dicts_all_columns(driver, headers):
     """
@@ -277,15 +315,17 @@ def click_possible_docs_tabs(driver):
 def fetch_detail_and_pdfs(driver, detail_url, uid, req_sess, max_pdfs=10, timeout=30):
     raise NotImplementedError("PDF/detail fetching removed for CSV-only export.")
 
-def fetch_detail_text(driver, detail_url):
-    """Open detail page and extract visible main text. Returns string (may be empty)."""
+def fetch_detail_text_and_cpv(driver, detail_url):
+    """Open detail page and extract visible main text, CPV codes, and submission deadline. Returns tuple (text, cpv_codes, submission_deadline)."""
     try:
         driver.get(detail_url)
         WebDriverWait(driver, 25).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
         time.sleep(0.5)
     except Exception:
-        return ""
-    # Try likely main content containers first
+        return "", "", ""
+    
+    # Extract main text
+    detail_text = ""
     for sel in [
         "main", "article", "#content", ".content", ".main", ".container",
         ".detail", ".panel-body", ".modul-detailansicht"
@@ -294,11 +334,99 @@ def fetch_detail_text(driver, detail_url):
         if els:
             t = els[0].get_attribute("innerText").strip()
             if len(t) > 50:
-                return t
+                detail_text = t
+                break
+    
+    if not detail_text:
+        try:
+            detail_text = driver.find_element(By.TAG_NAME, "body").get_attribute("innerText").strip()
+        except Exception:
+            detail_text = ""
+    
+    # Extract CPV codes from the page
+    cpv_codes = []
+    submission_deadline = ""
+    
     try:
-        return driver.find_element(By.TAG_NAME, "body").get_attribute("innerText").strip()
-    except Exception:
-        return ""
+        page_text = driver.find_element(By.TAG_NAME, "body").get_attribute("innerText")
+        
+        # Extract CPV codes
+        cpv_pattern = re.compile(r'\b(\d{8}(?:-\d{1,3})?)\b')
+        found_codes = cpv_pattern.findall(page_text)
+        
+        # Also look for CPV codes in specific elements
+        cpv_selectors = [
+            "//*[contains(text(), 'CPV') or contains(text(), 'cpv')]",
+            "//*[contains(@class, 'cpv') or contains(@id, 'cpv')]",
+            "//*[contains(text(), '72000000') or contains(text(), '79300000')]"
+        ]
+        
+        for selector in cpv_selectors:
+            try:
+                elements = driver.find_elements(By.XPATH, selector)
+                for element in elements:
+                    text = element.get_attribute("innerText")
+                    codes = cpv_pattern.findall(text)
+                    found_codes.extend(codes)
+            except Exception:
+                continue
+        
+        # Remove duplicates and sort
+        cpv_codes = sorted(list(set(found_codes)))
+        
+        # Extract submission deadline (Abgabefrist Angebot)
+        deadline_patterns = [
+            r'Abgabefrist\s+Angebot[:\s]*(.*?)(?=\n|$)',
+            r'Angebotsfrist[:\s]*(.*?)(?=\n|$)',
+            r'Bewerbungsfrist[:\s]*(.*?)(?=\n|$)',
+            r'Submission\s+deadline[:\s]*(.*?)(?=\n|$)',
+            r'Deadline[:\s]*(.*?)(?=\n|$)',
+            r'Einreichungsfrist[:\s]*(.*?)(?=\n|$)',
+            r'Termin[:\s]*(.*?)(?=\n|$)'
+        ]
+        
+        for pattern in deadline_patterns:
+            match = re.search(pattern, page_text, re.IGNORECASE | re.DOTALL)
+            if match:
+                deadline_text = match.group(1).strip()
+                # Clean up the deadline text
+                deadline_text = re.sub(r'\s+', ' ', deadline_text)
+                # Extract just the date part if there's extra text
+                date_match = re.search(r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})', deadline_text)
+                if date_match:
+                    submission_deadline = date_match.group(1)
+                else:
+                    submission_deadline = deadline_text
+                break
+        
+        # Also try XPath selectors for deadline
+        if not submission_deadline:
+            deadline_selectors = [
+                "//*[contains(text(), 'Abgabefrist') or contains(text(), 'Angebotsfrist') or contains(text(), 'Bewerbungsfrist')]",
+                "//*[contains(text(), 'Submission deadline') or contains(text(), 'Deadline')]",
+                "//*[contains(text(), 'Einreichungsfrist') or contains(text(), 'Termin')]"
+            ]
+            
+            for selector in deadline_selectors:
+                try:
+                    elements = driver.find_elements(By.XPATH, selector)
+                    for element in elements:
+                        text = element.get_attribute("innerText").strip()
+                        if text and len(text) < 200:  # Reasonable length for a deadline
+                            # Extract date from the text
+                            date_match = re.search(r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})', text)
+                            if date_match:
+                                submission_deadline = date_match.group(1)
+                                break
+                    if submission_deadline:
+                        break
+                except Exception:
+                    continue
+        
+    except Exception as e:
+        print(f"   ⚠️  Error extracting details: {e}")
+    
+    return detail_text, cpv_codes, submission_deadline
 
 # -------- Helper to find the 'last publication date' column --------
 def find_last_publication_header(headers):
@@ -308,10 +436,10 @@ def find_last_publication_header(headers):
     candidates = []
     for h in headers:
         norm_h = _norm(h)
-        if any(key in norm_h for key in ("veroffentlich", "veröffentlich", "publication")):
+        if any(key in norm_h for key in ("veroffentlich", "veröffentlich", "publication", "last_pub")):
             candidates.append(h)
-    # Prefer the most explicit German phrasing if multiple found
-    for pref in ("Letzte Veröffentlichung", "Zuletzt veröffentlicht"):
+    # Prefer the most explicit English phrasing if multiple found
+    for pref in ("Last_Publication", "Last_Published", "Letzte Veröffentlichung", "Zuletzt veröffentlicht"):
         if pref in candidates:
             return pref
     # Otherwise return the first match if any
@@ -359,11 +487,17 @@ def crawl_all_once(headless=HEADLESS, max_pages=MAX_PAGES, per_page_delay=PER_PA
 
     rows = []
     page = 1
-    # Pagination disabled: collect only the first page
-    print(f"📄 Page {page} …", end="", flush=True)
-    page_rows = row_dicts_all_columns(driver, headers)
-    rows.extend(page_rows)
-    print(f" kept {len(page_rows)}")
+    while True:
+        print(f"📄 Page {page} …", end="", flush=True)
+        page_rows = row_dicts_all_columns(driver, headers)
+        rows.extend(page_rows)
+        print(f" kept {len(page_rows)}")
+        if max_pages and page >= max_pages:
+            break
+        time.sleep(per_page_delay)
+        if not go_next(driver):
+            break
+        page += 1
 
     # Assign stable UID per row (based on detail_url, fallback to Bezeichnung)
     for idx, r in enumerate(rows, 1):
@@ -388,38 +522,95 @@ def crawl_all_once(headless=HEADLESS, max_pages=MAX_PAGES, per_page_delay=PER_PA
     else:
         print("⚠️ Could not find a 'last publication' column; no filtering applied.")
 
-    # Enrich with detail page text (no PDFs)
+    # Enrich with detail page text, CPV codes, and submission deadline
     total = len(rows)
     for i, r in enumerate(rows, 1):
         durl = r.get("detail_url", "")
         if not durl:
             r["detail_content"] = ""
+            r["CPV_Codes"] = ""
+            r["Abgabefrist_Angebot"] = ""
             print(f"   ↪ [{i}/{total}] no detail_url")
             continue
         print(f"   ↪ [{i}/{total}] details: {durl}")
-        r["detail_content"] = fetch_detail_text(driver, durl)
+        detail_text, cpv_codes, submission_deadline = fetch_detail_text_and_cpv(driver, durl)
+        r["detail_content"] = detail_text
+        r["CPV_Codes"] = ", ".join(cpv_codes) if cpv_codes else ""
+        r["Abgabefrist_Angebot"] = submission_deadline
 
     driver.quit()
 
-    # Save CSV
-    all_keys = set(headers + [f"{h}_link" for h in headers] + ["uid","matched_keywords","detail_url","detail_content"])
+    # Transform data to new column structure
+    transformed_rows = []
     for r in rows:
-        all_keys.update(r.keys())
+        new_row = {}
+        
+        # Map columns to new names
+        new_row["organization"] = r.get("Contracting_Authority", "")
+        new_row["languages"] = "de"  # Fill with "de" for all rows
+        new_row["submission_language"] = "de"  # Fill with "de" for all rows
+        new_row["deadline"] = r.get("Abgabefrist_Angebot", "")
+        new_row["cpv_codes"] = r.get("CPV_Codes", "")
+        new_row["CPV_labels"] = ""  # Leave blank as requested
+        new_row["title"] = r.get("Title", "")
+        new_row["publication_id"] = r.get("uid", "")
+        
+        # Find publication date from various possible columns
+        publication_date = ""
+        # Debug: print available columns for first row
+        if len(transformed_rows) == 0:
+            print(f"🔍 Available columns in row: {list(r.keys())}")
+        
+        # Try multiple possible column names for publication date
+        possible_pub_cols = [
+            "veröffentlicht", "Veröffentlicht", "VERÖFFENTLICHT",  # The actual column name from the data
+            "Publication_Date", "Last_Publication", "Last_Published", 
+            "Veröffentlichungsdatum", "Letzte Veröffentlichung", "Zuletzt veröffentlicht",
+            "Veröffentlichung", "Datum", "Date", "Published", "Publication"
+        ]
+        
+        for col in possible_pub_cols:
+            if col in r and r[col] and str(r[col]).strip():
+                publication_date = str(r[col]).strip()
+                if len(transformed_rows) == 0:
+                    print(f"✅ Found publication date in column '{col}': {publication_date}")
+                break
+        
+        # If still not found, try to find any column containing date-like patterns
+        if not publication_date:
+            for col, value in r.items():
+                if value and isinstance(value, str):
+                    # Look for date patterns in the value
+                    if re.search(r'\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2}', str(value)):
+                        # Check if column name suggests it's a date
+                        if any(word in col.lower() for word in ['date', 'datum', 'veröffentlich', 'publication', 'published']):
+                            publication_date = str(value).strip()
+                            if len(transformed_rows) == 0:
+                                print(f"✅ Found date-like value in column '{col}': {publication_date}")
+                            break
+        
+        new_row["publication_date"] = publication_date
+        
+        new_row["url"] = r.get("detail_url", "")
+        new_row["description"] = r.get("detail_content", "")
+        
+        # Only keep the 11 specified columns - don't add any other columns
+        transformed_rows.append(new_row)
 
-    preferred = [
-        "uid","Bezeichnung","Geschäftszeichen","Vergabestelle","Ort der Leistung",
-        "matched_keywords","detail_url","detail_content"
+    # Define exactly the 11 columns we want
+    header = [
+        "organization", "languages", "submission_language", "deadline", "cpv_codes", 
+        "CPV_labels", "title", "publication_id", "publication_date", "url", "description"
     ]
-    header = [k for k in preferred if k in all_keys] + [k for k in sorted(all_keys) if k not in preferred]
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     out = f"evergabe_filtered_with_details_{ts}.csv"
     with open(out, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=header)
         w.writeheader()
-        w.writerows(rows)
+        w.writerows(transformed_rows)
 
-    print(f"\n✅ Saved {len(rows)} rows to {out}")
+    print(f"\n✅ Saved {len(transformed_rows)} rows to {out}")
 
 if __name__ == "__main__":
     crawl_all_once()
