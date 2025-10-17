@@ -1,0 +1,47 @@
+[
+  {
+    "version": "Baseline (Title Only)",
+    "extraction_method": "title_only",
+    "test_cases": 20,
+    "errors": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "tp": 1,
+    "fp": 0,
+    "tn": 19,
+    "fn": 0,
+    "timestamp": "2025-10-09T17:00:47.776536"
+  },
+  {
+    "version": "XML Description Only",
+    "extraction_method": "xml_description",
+    "test_cases": 20,
+    "errors": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "tp": 1,
+    "fp": 0,
+    "tn": 19,
+    "fn": 0,
+    "timestamp": "2025-10-09T17:02:32.356880"
+  },
+  {
+    "version": "XML Desc + Deliverables",
+    "extraction_method": "xml_desc_deliverables",
+    "test_cases": 20,
+    "errors": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "tp": 1,
+    "fp": 0,
+    "tn": 19,
+    "fn": 0,
+    "timestamp": "2025-10-09T17:04:20.031608"
+  }
+]

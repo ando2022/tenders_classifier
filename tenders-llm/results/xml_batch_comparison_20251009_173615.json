@@ -1,0 +1,44 @@
+[
+  {
+    "version": "Baseline (Title Only)",
+    "extraction_method": "title_only",
+    "test_cases": 50,
+    "accuracy": 0.94,
+    "precision": 0.4,
+    "recall": 1.0,
+    "f1_score": 0.5714285714285715,
+    "tp": 2,
+    "fp": 3,
+    "tn": 45,
+    "fn": 0,
+    "timestamp": "2025-10-09T17:33:15.736946"
+  },
+  {
+    "version": "XML Description (2.6)",
+    "extraction_method": "xml_description",
+    "test_cases": 50,
+    "accuracy": 0.88,
+    "precision": 0.25,
+    "recall": 1.0,
+    "f1_score": 0.4,
+    "tp": 2,
+    "fp": 6,
+    "tn": 42,
+    "fn": 0,
+    "timestamp": "2025-10-09T17:34:51.814751"
+  },
+  {
+    "version": "XML SIMAP (2.6+3.7+3.8)",
+    "extraction_method": "xml_desc_deliverables",
+    "test_cases": 50,
+    "accuracy": 0.88,
+    "precision": 0.25,
+    "recall": 1.0,
+    "f1_score": 0.4,
+    "tp": 2,
+    "fp": 6,
+    "tn": 42,
+    "fn": 0,
+    "timestamp": "2025-10-09T17:36:15.462366"
+  }
+]
